@@ -6,14 +6,14 @@ import (
 )
 
 type User struct {
-	ID          int64                     `json:"id"`
-	FirstName   string                    `json:"firstName"`
-	LastName    string                    `json:"lastName"`
-	Email       string                    `json:"email"`
-	PhoneNumber string                    `json:"phoneNumber"`
-	Description string                    `json:"description"`
-	Avatar      string                    `json:"avatar"`
-	Birthday    time.Time                 `json:"birthday"`
-	Department  string                    `json:"department"`
+	ID          int64                     `json:"id" db:"id"`
+	FirstName   string                    `json:"firstName" db:"first_name"`
+	LastName    string                    `json:"lastName" db:"last_name"`
+	Email       string                    `json:"email" db:"email"`
+	PhoneNumber string                    `json:"phoneNumber" db:"phone_number"`
+	Description string                    `json:"description" db:"description"`
+	Avatar      string                    `json:"avatar" db:"avatar"`
+	Birthday    time.Time                 `json:"birthday" db:"birthday"`
+	Department  string                    `json:"department" db:"department"`
 	Products    []product_service.Product `json:"products,omitempty"`
 }

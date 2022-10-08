@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"user-service/internal/config"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func InitDB(cfg *config.Config) (*sql.DB, error) {
+func InitDB(cfg *config.Config) (*sqlx.DB, error) {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser,
@@ -32,5 +33,7 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 		}
 	}
 
-	return db, nil
+	sqlx.NewDb(db, "postgres")
+
+	return sqlx.NewDb(db, "postgres"), nil
 }

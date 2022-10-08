@@ -1,7 +1,7 @@
 package migrations
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"user-service/internal/config"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Migrate(db *sql.DB, cfg *config.Config) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{
+func Migrate(db *sqlx.DB, cfg *config.Config) error {
+	driver, err := postgres.WithInstance(db.DB, &postgres.Config{
 		DatabaseName: cfg.Database,
 	})
 	if err != nil {

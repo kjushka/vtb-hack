@@ -1,14 +1,15 @@
 package http_service
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 	"user-service/internal/config"
 	"user-service/internal/user_repository"
@@ -25,12 +26,12 @@ type Service interface {
 	// routes
 	CreateUser(w http.ResponseWriter, r *http.Request)
 	GetUser(w http.ResponseWriter, r *http.Request)
-	GetUsersByIDs(w http.ResponseWriter, r *http.Request)
+	GetUsers(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
 	DeleteUser(w http.ResponseWriter, r *http.Request)
 }
 
-func NewService(db *sql.DB, cfg *config.Config) Service {
+func NewService(db *sqlx.DB, cfg *config.Config) Service {
 	userRepository := user_repository.NewUserRepository(db)
 	return &httpService{
 		userRepository: userRepository,
@@ -201,8 +202,53 @@ func (s *httpService) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (s *httpService) GetUsersByIDs(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) GetUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	var (
+		users  []user.User
+		outErr error
+	)
+	userIDsStr := r.URL.Query().Get("ids")
+	if userIDsStr != "" {
+		var userIDs []int64
+		for _, userIDStr := range strings.Split(userIDsStr, ",") {
+			userID, err := strconv.ParseInt(userIDStr, 10, 64)
+			if err != nil {
+				http.Error(w, errors.Wrap(err, "invalid user id").Error(), http.StatusBadRequest)
+				return
+			}
+			userIDs = append(userIDs, userID)
+		}
+		if len(userIDs) == 0 {
+			http.Error(w, "empty user ids", http.StatusBadRequest)
+			return
+		}
+
+		users, outErr = s.userRepository.GetUsersByIDs(ctx, userIDs)
+	} else {
+		users, outErr = s.userRepository.GetAllUsers(ctx)
+	}
+
+	if outErr != nil {
+		http.Error(w, errors.Wrap(outErr, "error in getting user").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(users) == 0 {
+		http.Error(w, "no users found", http.StatusNotFound)
+		return
+	}
+
+	result, err := json.Marshal(users)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
 }
 
 func (s *httpService) EditUser(w http.ResponseWriter, r *http.Request) {

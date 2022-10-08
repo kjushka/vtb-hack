@@ -2,7 +2,7 @@ package user_repository
 
 import (
 	"context"
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"time"
 	"user-service/pkg/user"
@@ -11,18 +11,20 @@ import (
 type UserRepository interface {
 	SaveUser(ctx context.Context, user *user.User) error
 	GetUser(ctx context.Context, userID int64) (*user.User, error)
+	GetUsersByIDs(ctx context.Context, userIDs []int64) ([]user.User, error)
+	GetAllUsers(ctx context.Context) ([]user.User, error)
 	DeleteUser(ctx context.Context, userID int64) error
 	UpdateUser(ctx context.Context, userID int64, u *user.User) (*user.User, error)
 }
 
-func NewUserRepository(db *sql.DB) UserRepository {
+func NewUserRepository(db *sqlx.DB) UserRepository {
 	return &userRepository{
 		db: db,
 	}
 }
 
 type userRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (userRep *userRepository) SaveUser(ctx context.Context, user *user.User) error {
@@ -56,7 +58,9 @@ func (userRep *userRepository) GetUser(ctx context.Context, userID int64) (*user
 	defer cancel()
 
 	var err error
-	row := userRep.db.QueryRowContext(ctx,
+	u := &user.User{}
+	err = userRep.db.GetContext(ctx,
+		u,
 		`
 		select id, first_name, last_name, email, phone_number, birthday, department, description, avatar
 		from system_users
@@ -64,26 +68,47 @@ func (userRep *userRepository) GetUser(ctx context.Context, userID int64) (*user
 		`,
 		userID,
 	)
-	if err = row.Err(); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	u := &user.User{}
-	err = row.Scan(
-		&u.ID,
-		&u.FirstName,
-		&u.LastName,
-		&u.Email,
-		&u.PhoneNumber,
-		&u.Birthday,
-		&u.Department,
-		&u.Description,
-		&u.Avatar,
-	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	return u, nil
+}
+
+func (userRep *userRepository) GetUsersByIDs(ctx context.Context, userIDs []int64) ([]user.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	var err error
+	queryBase := "select id, first_name, last_name, email, phone_number, birthday, department, description, avatar from system_users where id in (?);"
+	query, params, err := sqlx.In(queryBase, userIDs)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	query = userRep.db.Rebind(query)
+
+	var users []user.User
+	err = userRep.db.SelectContext(ctx, &users, query, params...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return users, nil
+}
+
+func (userRep *userRepository) GetAllUsers(ctx context.Context) ([]user.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	query := "select id, first_name, last_name, email, phone_number, birthday, department, description, avatar from system_users;"
+
+	var users []user.User
+	err := userRep.db.SelectContext(ctx, &users, query)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return users, nil
 }
 
 func (userRep *userRepository) DeleteUser(ctx context.Context, userID int64) error {
@@ -117,10 +142,16 @@ func (userRep *userRepository) UpdateUser(ctx context.Context, userID int64, u *
 			email = $4,
 			phone_number = $5,
 			department = $6,
-			description = $7,
+			description = $7
 		where id=$1;
 		`,
 		userID,
+		u.FirstName,
+		u.LastName,
+		u.Email,
+		u.PhoneNumber,
+		u.Department,
+		u.Description,
 	)
 	if err != nil {
 		return nil, errors.WithStack(err)
