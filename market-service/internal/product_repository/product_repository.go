@@ -2,26 +2,31 @@ package product_repository
 
 import (
 	"context"
-	"database/sql"
 	"market-service/internal/user_service"
+	"market-service/pkg/product"
 	product_model "market-service/pkg/product"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
 type ProductRepository interface {
 	GetProduct(ctx context.Context, productID int64) (*product_model.Product, error)
+	SaveProduct(ctx context.Context, product *product.Product) error
+	GetAllProducts(ctx context.Context) ([]product.Product, error)
+	GetProductsByIDs(ctx context.Context, userIDs []int64) ([]product.Product, error)
+	UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error)
 }
 
-func NewProductRepository(db *sql.DB) ProductRepository {
+func NewProductRepository(db *sqlx.DB) ProductRepository {
 	return &productRepository{
 		db: db,
 	}
 }
 
 type productRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (pr *productRepository) GetProduct(ctx context.Context, productID int64) (*product_model.Product, error) {
@@ -54,7 +59,7 @@ func (pr *productRepository) getProduct(ctx context.Context, productID int64) (*
 		return nil, errors.WithStack(err)
 	}
 
-	productResult := &product_model.Product{Owner: &user_service.User{}}
+	productResult := &product_model.Product{Owner: user_service.User{}}
 	err = productQueryRow.Scan(
 		&productResult.ID,
 		&productResult.Title,
@@ -98,4 +103,94 @@ func (pr *productRepository) getProductComments(ctx context.Context, productID i
 	}
 
 	return comments, nil
+}
+
+func (pr *productRepository) SaveProduct(ctx context.Context, product *product.Product) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	_, err := pr.db.ExecContext(ctx,
+		`
+		insert into products (title, owner_id, preview, product_count, price, description)
+		values ($1, $2, $3, $4, $5, $6);
+		`,
+		product.Title,
+		product.Owner.ID,
+		product.Preview,
+		product.Count,
+		product.Price,
+		product.Description,
+	)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func (pr *productRepository) GetAllProducts(ctx context.Context) ([]product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	query := "select id, title, description, price, product_count as count, preview, owner_id from products;"
+
+	var products []product.Product
+	err := pr.db.SelectContext(ctx, &products, query)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return products, nil
+}
+
+func (pr *productRepository) GetProductsByIDs(ctx context.Context, productsIds []int64) ([]product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	var err error
+	queryBase := "select id, title, description, price, product_count, preview, owner_id from products where id in (?);"
+	query, params, err := sqlx.In(queryBase, productsIds)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	query = pr.db.Rebind(query)
+
+	var products []product.Product
+	err = pr.db.SelectContext(ctx, &products, query, params...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return products, nil
+}
+
+func (prRep *productRepository) UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	_, err := prRep.db.ExecContext(ctx,
+		`
+		update products
+		set
+		    title = $2,
+			description = $3,
+			count = $4,
+			owner_id = $5,
+			preview = $6,
+			price = $7
+		where id=$1;
+		`,
+		productId,
+		pr.Title,
+		pr.Description,
+		pr.Count,
+		pr.Owner.ID,
+		pr.Preview,
+		pr.Price,
+	)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return pr, nil
 }

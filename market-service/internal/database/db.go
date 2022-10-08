@@ -1,16 +1,16 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"market-service/internal/config"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 )
 
-func InitDB(cfg *config.Config) (*sql.DB, error) {
+func InitDB(cfg *config.Config) (*sqlx.DB, error) {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		cfg.DBUser,
@@ -19,7 +19,7 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 		cfg.DBPort,
 		cfg.Database,
 	)
-	db, err := sql.Open("postgres", connStr)
+	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't connect with database")
 	}

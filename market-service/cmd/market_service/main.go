@@ -30,7 +30,7 @@ func main() {
 	}
 
 	log.Println("service starting...")
-	router := http_service.InitRouter(db, cfg.UserServiceURL)
+	router := http_service.InitRouter(db, cfg)
 	err = http.ListenAndServe(":8080", router)
 	if err != nil {
 		log.Println(errors.Wrap(err, "error in running service"))

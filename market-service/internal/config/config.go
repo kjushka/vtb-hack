@@ -10,6 +10,7 @@ import (
 type Config struct {
 	DBHost, DBPort, Database, DBUser, DBPass string
 	UserServiceURL                           string
+	SaveImagesURL                            string
 }
 
 func InitConfig() (*Config, error) {

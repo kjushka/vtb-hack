@@ -6,15 +6,15 @@ import (
 )
 
 type Product struct {
-	ID          int64              `json:"id"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	Price       float64            `json:"price"`
-	Count       int64              `json:"count"`
-	Preview     string             `json:"preview"`
-	Images      []string           `json:"images,omitempty"`
-	Owner       *user_service.User `json:"owner"`
-	Comments    []Comment          `json:"comments,omitempty"`
+	ID          int64   `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Price       float64 `json:"price"`
+	Count       int64   `json:"count"`
+	Preview     string  `json:"preview"`
+	//Images      []string           `json:"images,omitempty"`
+	Owner    user_service.User `json:"owner"`
+	Comments []Comment         `json:"comments,omitempty"`
 }
 
 type Comment struct {
