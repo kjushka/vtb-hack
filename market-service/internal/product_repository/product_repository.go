@@ -2,28 +2,30 @@ package product_repository
 
 import (
 	"context"
-	"database/sql"
 	"market-service/internal/user_service"
 	"market-service/pkg/product"
 	product_model "market-service/pkg/product"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
 type ProductRepository interface {
 	GetProduct(ctx context.Context, productID int64) (*product_model.Product, error)
 	SaveProduct(ctx context.Context, product *product.Product) error
+	GetAllProducts(ctx context.Context) ([]product.Product, error)
+	GetProductsByIDs(ctx context.Context, userIDs []int64) ([]product.Product, error)
 }
 
-func NewProductRepository(db *sql.DB) ProductRepository {
+func NewProductRepository(db *sqlx.DB) ProductRepository {
 	return &productRepository{
 		db: db,
 	}
 }
 
 type productRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (pr *productRepository) GetProduct(ctx context.Context, productID int64) (*product_model.Product, error) {
@@ -124,4 +126,40 @@ func (pr *productRepository) SaveProduct(ctx context.Context, product *product.P
 	}
 
 	return nil
+}
+
+func (pr *productRepository) GetAllProducts(ctx context.Context) ([]product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	query := "select id, title, description, price, count, preview, owner from products;"
+
+	var products []product.Product
+	err := pr.db.SelectContext(ctx, &products, query)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return products, nil
+}
+
+func (pr *productRepository) GetProductsByIDs(ctx context.Context, productsIds []int64) ([]product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	var err error
+	queryBase := "select id, title, description, price, count, preview, owner from products where id in (?);"
+	query, params, err := sqlx.In(queryBase, productsIds)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	query = pr.db.Rebind(query)
+
+	var products []product.Product
+	err = pr.db.SelectContext(ctx, &products, query, params...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return products, nil
 }

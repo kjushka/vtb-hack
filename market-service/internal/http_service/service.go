@@ -1,7 +1,6 @@
 package http_service
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,8 +11,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +31,7 @@ type Service interface {
 	BuyProduct(w http.ResponseWriter, r *http.Request)
 }
 
-func NewService(db *sql.DB, cfg *config.Config) Service {
+func NewService(db *sqlx.DB, cfg *config.Config) Service {
 	userService := user_service.NewUserService(cfg.UserServiceURL)
 	productRepository := product_repository.NewProductRepository(db)
 	return &httpService{
@@ -182,7 +183,52 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	var (
+		products []product.Product
+		outErr   error
+	)
+	productIDsStr := r.URL.Query().Get("ids")
+	if productIDsStr != "" {
+		var productIDs []int64
+		for _, productIdStr := range strings.Split(productIDsStr, ",") {
+			productId, err := strconv.ParseInt(productIdStr, 10, 64)
+			if err != nil {
+				http.Error(w, errors.Wrap(err, "invalid product id").Error(), http.StatusBadRequest)
+				return
+			}
+			productIDs = append(productIDs, productId)
+		}
+		if len(productIDs) == 0 {
+			http.Error(w, "empty user ids", http.StatusBadRequest)
+			return
+		}
+
+		products, outErr = s.productRepository.GetProductsByIDs(ctx, productIDs)
+	} else {
+		products, outErr = s.productRepository.GetAllProducts(ctx)
+	}
+
+	if outErr != nil {
+		http.Error(w, errors.Wrap(outErr, "error in getting product").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(products) == 0 {
+		http.Error(w, "no products found", http.StatusNotFound)
+		return
+	}
+
+	result, err := json.Marshal(products)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
 }
 
 func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
