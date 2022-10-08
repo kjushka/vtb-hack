@@ -232,7 +232,46 @@ func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	productIDStr := chi.URLParam(r, "id")
+	if productIDStr == "" {
+		http.Error(w, "empty product id", http.StatusBadRequest)
+		return
+	}
+	productId, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "invalid product id").Error(), http.StatusBadRequest)
+		return
+	}
+
+	pr := &product.Product{}
+	buf, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(buf, &pr)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	pr, err = s.productRepository.UpdateProduct(ctx, productId, pr)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in updating u").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respData, err := json.Marshal(&pr)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(respData)
 }
 
 func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {

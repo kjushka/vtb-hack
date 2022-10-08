@@ -16,6 +16,7 @@ type ProductRepository interface {
 	SaveProduct(ctx context.Context, product *product.Product) error
 	GetAllProducts(ctx context.Context) ([]product.Product, error)
 	GetProductsByIDs(ctx context.Context, userIDs []int64) ([]product.Product, error)
+	UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error)
 }
 
 func NewProductRepository(db *sqlx.DB) ProductRepository {
@@ -162,4 +163,35 @@ func (pr *productRepository) GetProductsByIDs(ctx context.Context, productsIds [
 	}
 
 	return products, nil
+}
+
+func (prRep *productRepository) UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	_, err := prRep.db.ExecContext(ctx,
+		`
+		update products
+		set
+		    title = $2,
+			description = $3,
+			count = $4,
+			owner_id = $5,
+			preview = $6,
+			price = $7
+		where id=$1;
+		`,
+		productId,
+		pr.Title,
+		pr.Description,
+		pr.Count,
+		pr.Owner.ID,
+		pr.Preview,
+		pr.Price,
+	)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return pr, nil
 }
