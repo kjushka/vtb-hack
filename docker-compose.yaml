@@ -81,6 +81,20 @@ services:
       - pgs
     user: root
 
+  quest-service:
+    build:
+      context: .
+      dockerfile: quest-service.Dockerfile
+    container_name: quest_service
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - 8091:8091
+    networks:
+      - bridge-network
+    depends_on:
+      - pgs
+
   pgs:
     container_name: postgres
     image: postgres:14-alpine
