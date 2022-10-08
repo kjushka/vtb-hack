@@ -55,7 +55,7 @@ func InitConfig() (*Config, error) {
 	if !ok {
 		return nil, errors.New("MONEY_SERVICE_PORT not found")
 	}
-	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api/wallet/", moneyServiceHost, moneyServicePort)
+	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api/wallet", moneyServiceHost, moneyServicePort)
 
 	saveImagesURL, ok := os.LookupEnv("SAVE_IMAGES_PATH")
 	if !ok {

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -133,14 +134,14 @@ func (s *httpService) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = os.Mkdir(fmt.Sprintf("%s/%v", s.saveImagesURL, u.ID), os.ModeDir)
+	err = os.MkdirAll(path.Join(s.saveImagesURL, strconv.FormatInt(u.ID, 10)), os.ModeDir)
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		http.Error(w, errors.Wrap(err, "failed to create dir for user image").Error(), http.StatusInternalServerError)
 		return
 	}
 
-	localFileName := fmt.Sprintf("%s/%v/%s", s.saveImagesURL, u.ID, fileHeader.Filename)
-	out, err := os.OpenFile(localFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	localFileName := path.Join(s.saveImagesURL, strconv.FormatInt(u.ID, 10), fileHeader.Filename)
+	out, err := os.OpenFile(localFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		file.Close()
 		http.Error(w, errors.Wrap(err, fmt.Sprintf("failed to open the file %s for writing", localFileName)).Error(), http.StatusInternalServerError)

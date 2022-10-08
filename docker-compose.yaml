@@ -20,12 +20,15 @@ services:
       #USER_SERVICE
       - USER_SERVICE_HOST=user_service
       - USER_SERVICE_PORT=8081
+      #common
+      - SAVE_IMAGES_PATH=/tmp/var/public/users
     ports:
       - 8080:8080
     networks:
       - bridge-network
     volumes:
-      - ./public/market_products:/tmp/public/market_products
+      - ./public/market_products:/tmp/var/public/market_products
+    user: root
     restart: always
 
   user_service:
@@ -50,13 +53,14 @@ services:
       #AUTH_KEY
       - AUTH_KEY=dnjJNNGjd998R#df
       #common
-      - SAVE_IMAGES_PATH=/tmp/public/users
+      - SAVE_IMAGES_PATH=/tmp/var/public/users
     ports:
       - 8081:8081
     networks:
       - bridge-network
     volumes:
-      - ./public/users:/tmp/public/users
+      - ./public/users:/tmp/var/public/users
+    user: root
     restart: always
 
   pgs:

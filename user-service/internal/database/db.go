@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"log"
+	"time"
 	"user-service/internal/config"
 
 	_ "github.com/lib/pq"
@@ -28,7 +28,7 @@ func InitDB(cfg *config.Config) (*sqlx.DB, error) {
 	err = db.Ping()
 	if err != nil {
 		for err != nil {
-			log.Println(errors.Wrap(err, "couldn't make ping").Error())
+			time.Sleep(time.Second * 2)
 			err = db.Ping()
 		}
 	}
