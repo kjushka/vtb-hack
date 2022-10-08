@@ -41,7 +41,7 @@ services:
       - PG_MARKET_USER=postgres
       - PG_MARKET_PASS=postgres
       - PG_MARKET_DATABASE=user_service
-      #PRODUCT_SERVICE
+      #MARKET_SERVICE
       - MARKET_SERVICE_HOST=market_service
       - MARKET_SERVICE_PORT=8080
       #MONEY_SERVICE

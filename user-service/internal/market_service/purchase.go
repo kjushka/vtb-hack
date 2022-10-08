@@ -1,9 +1,9 @@
-package product_service
+package market_service
 
 import "time"
 
 type Purchase struct {
-	Product *Product
+	Product
 	BuyDate time.Time
 	Count   int64
 }

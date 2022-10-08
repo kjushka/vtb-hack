@@ -2,7 +2,7 @@ package user
 
 import (
 	"time"
-	"user-service/internal/product_service"
+	"user-service/internal/market_service"
 )
 
 type User struct {
@@ -16,7 +16,7 @@ type User struct {
 	Birthday    time.Time `json:"birthday" db:"birthday"`
 	Department  string    `json:"department" db:"department"`
 
-	Balance   float64                    `json:"balance,omitempty"`
-	Products  []product_service.Product  `json:"products,omitempty"`
-	Purchases []product_service.Purchase `json:"purchases,omitempty"`
+	Balance   float64                   `json:"balance,omitempty"`
+	Products  []market_service.Product  `json:"products,omitempty"`
+	Purchases []market_service.Purchase `json:"purchases,omitempty"`
 }

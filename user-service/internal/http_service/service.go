@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"user-service/internal/config"
+	"user-service/internal/market_service"
 	"user-service/internal/money_service"
 	"user-service/internal/user_repository"
 	"user-service/pkg/user"
@@ -36,6 +37,7 @@ func NewService(db *sqlx.DB, cfg *config.Config) Service {
 	return &httpService{
 		userRepository: user_repository.NewUserRepository(db),
 		moneyService:   money_service.NewMoneyService(cfg.MoneyServiceAPIURL),
+		marketService:  market_service.NewMarketService(cfg.MarketServiceAPIURL),
 		saveImagesURL:  cfg.SaveImagesURL,
 		authKey:        cfg.AuthKey,
 	}
@@ -44,6 +46,7 @@ func NewService(db *sqlx.DB, cfg *config.Config) Service {
 type httpService struct {
 	userRepository user_repository.UserRepository
 	moneyService   money_service.MoneyService
+	marketService  market_service.MarketService
 	saveImagesURL  string
 	authKey        string
 }
@@ -207,6 +210,18 @@ func (s *httpService) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	u.Balance = balance.Balance
 
+	u.Products, err = s.marketService.GetUserProducts(userID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting user products").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	u.Purchases, err = s.marketService.GetUserPurchases(userID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting user purchases").Error(), http.StatusInternalServerError)
+		return
+	}
+
 	result, err := json.Marshal(u)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
@@ -340,7 +355,14 @@ func (s *httpService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		err = s.moneyService.DeleteWallet(userID)
 		if err != nil {
-			log.Println(errors.Wrap(err, "error in deleting user picture"))
+			log.Println(errors.Wrap(err, "error in deleting user wallet"))
+		}
+	}()
+
+	go func() {
+		err = s.marketService.DeleteUserMarketData(userID)
+		if err != nil {
+			log.Println(errors.Wrap(err, "error in deleting user data in market"))
 		}
 	}()
 
