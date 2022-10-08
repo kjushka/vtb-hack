@@ -88,13 +88,8 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid count param", http.StatusBadRequest)
 		return
 	}
-	prod.Preview = r.PostFormValue("preview")
-	if prod.Preview == "" {
-		http.Error(w, "invalid preview param", http.StatusBadRequest)
-		return
-	}
 
-	file, fileHeader, err := r.FormFile("image")
+	file, fileHeader, err := r.FormFile("preview")
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "invoke FormFile error:").Error(), http.StatusInternalServerError)
 		return
