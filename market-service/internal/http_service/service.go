@@ -30,7 +30,10 @@ type Service interface {
 	GetProducts(w http.ResponseWriter, r *http.Request)
 	EditProduct(w http.ResponseWriter, r *http.Request)
 	DeleteProduct(w http.ResponseWriter, r *http.Request)
+
 	BuyProduct(w http.ResponseWriter, r *http.Request)
+	GetUserProducts(w http.ResponseWriter, r *http.Request)
+	GetUserPurchases(w http.ResponseWriter, r *http.Request)
 }
 
 func NewService(db *sqlx.DB, cfg *config.Config) Service {
@@ -180,6 +183,13 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	seller, err := s.userService.GetUserByID(p.Seller.ID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting seller data").Error(), http.StatusInternalServerError)
+		return
+	}
+	p.Seller = seller
+
 	resp, err := json.Marshal(p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -227,6 +237,32 @@ func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
 	if len(products) == 0 {
 		http.Error(w, "no products found", http.StatusNotFound)
 		return
+	}
+
+	usersIDs := make([]int64, 0)
+	for _, p := range products {
+		usersIDs = append(usersIDs, p.Seller.ID)
+		for _, comm := range p.Comments {
+			usersIDs = append(usersIDs, comm.Author.ID)
+		}
+	}
+	users, err := s.userService.GetUsersByIDs(usersIDs)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting users for products").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	usersMap := make(map[int64]*user_service.User)
+	for _, user := range users {
+		if _, ok := usersMap[user.ID]; !ok {
+			usersMap[user.ID] = user
+		}
+	}
+	for _, p := range products {
+		p.Seller = usersMap[p.Seller.ID]
+		for _, comm := range p.Comments {
+			comm.Author = usersMap[comm.Author.ID]
+		}
 	}
 
 	result, err := json.Marshal(products)
@@ -354,4 +390,72 @@ func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *httpService) GetUserProducts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var err error
+
+	userIDStr := chi.URLParam(r, "id")
+	if userIDStr == "" {
+		err = errors.New("no user id was found")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		err = errors.New("user id wasn't provided as integer")
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	products, err := s.productRepository.GetUserProducts(ctx, userID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting products").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := json.Marshal(products)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
+func (s *httpService) GetUserPurchases(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	var err error
+
+	userIDStr := chi.URLParam(r, "id")
+	if userIDStr == "" {
+		err = errors.New("no user id was found")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, err := strconv.ParseInt(userIDStr, 10, 64)
+	if err != nil {
+		err = errors.New("user id wasn't provided as integer")
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+
+	purchases, err := s.productRepository.GetUserPurchases(ctx, userID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting purchases").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := json.Marshal(purchases)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
 }

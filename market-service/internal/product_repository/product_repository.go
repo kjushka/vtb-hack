@@ -20,6 +20,8 @@ type ProductRepository interface {
 	UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error)
 	DeleteProduct(ctx context.Context, productID int64) error
 	MakePurchase(ctx context.Context, p *product.Product, customerID, amount int64) error
+	GetUserProducts(ctx context.Context, userID int64) ([]product.Product, error)
+	GetUserPurchases(ctx context.Context, userID int64) ([]product.Purchase, error)
 }
 
 func NewProductRepository(db *sqlx.DB) ProductRepository {
@@ -272,4 +274,41 @@ func (pr *productRepository) MakePurchase(ctx context.Context, p *product.Produc
 	}
 
 	return nil
+}
+
+func (pr *productRepository) GetUserProducts(ctx context.Context, userID int64) ([]product.Product, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	query := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products where seller_id = $1;"
+
+	var productsDTO []product.DTOProduct
+	err := pr.db.SelectContext(ctx, &productsDTO, query, userID)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return product.DTOToProducts(productsDTO), nil
+}
+
+func (pr *productRepository) GetUserPurchases(ctx context.Context, userID int64) ([]product.Purchase, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	query := `
+select pr.id, pr.title, pr.description, pr.price, pr.product_count as count, 
+       pr.preview, pr.seller_id as sellerID, pr.is_nft as isNFT, 
+       pur.buy_date as buyDate, pur.amount, pur.owner_id as ownerID 
+from purchases as pur
+inner join products as pr
+on pur.product_id = pr.id
+where pur.owner_id = $1;`
+
+	var dtoPurchases []product.DTOPurchase
+	err := pr.db.SelectContext(ctx, &dtoPurchases, query, userID)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return product.DTOToPurchase(dtoPurchases), nil
 }

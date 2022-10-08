@@ -9,6 +9,8 @@ func initRoutes(r chi.Router, s Service) {
 		r.Get("/products/{id}", s.GetProduct)
 		r.Put("/products/{id}", s.EditProduct)
 		r.Delete("/products/{id}", s.DeleteProduct)
+		r.Get("/products/users/{id}", s.GetUserProducts)
+		r.Get("/purchases/users/{id}", s.GetUserPurchases)
 		r.Post("/buy/{id}", s.BuyProduct)
 	})
 }
