@@ -30,8 +30,8 @@ type Service interface {
 	BuyProduct(w http.ResponseWriter, r *http.Request)
 }
 
-func NewService(db *sql.DB, userServiceAPIURL string, cfg *config.Config) Service {
-	userService := user_service.NewUserService(userServiceAPIURL)
+func NewService(db *sql.DB, cfg *config.Config) Service {
+	userService := user_service.NewUserService(cfg.UserServiceURL)
 	productRepository := product_repository.NewProductRepository(db)
 	return &httpService{
 		productRepository: productRepository,
@@ -107,7 +107,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	localFileName := fmt.Sprintf("%s/%v/%s", s.saveImagesURL, prod.ID, fileHeader.Filename)
-	out, err := os.OpenFile("access.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	out, err := os.OpenFile(localFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		file.Close()
 		http.Error(w, errors.Wrap(err, fmt.Sprintf("failed to open the file %s for writing", localFileName)).Error(), http.StatusInternalServerError)
@@ -124,7 +124,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	out.Close()
 	file.Close()
 
-	prod.Image = localFileName
+	prod.Preview = localFileName
 
 	ownerIdStr := r.PostFormValue("owner")
 	prod.Owner.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
