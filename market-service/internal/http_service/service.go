@@ -3,9 +3,14 @@ package http_service
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"io"
+	"market-service/internal/config"
 	"market-service/internal/product_repository"
 	"market-service/internal/user_service"
+	"market-service/pkg/product"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -25,18 +30,20 @@ type Service interface {
 	BuyProduct(w http.ResponseWriter, r *http.Request)
 }
 
-func NewService(db *sql.DB, userServiceAPIURL string) Service {
+func NewService(db *sql.DB, userServiceAPIURL string, cfg *config.Config) Service {
 	userService := user_service.NewUserService(userServiceAPIURL)
 	productRepository := product_repository.NewProductRepository(db)
 	return &httpService{
 		productRepository: productRepository,
 		userService:       userService,
+		saveImagesURL:     cfg.SaveImagesURL,
 	}
 }
 
 type httpService struct {
 	productRepository product_repository.ProductRepository
 	userService       user_service.UserService
+	saveImagesURL     string
 }
 
 func (s *httpService) CheckAuth(next http.Handler) http.Handler {
@@ -46,6 +53,101 @@ func (s *httpService) CheckAuth(next http.Handler) http.Handler {
 }
 
 func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	err := r.ParseMultipartForm(32 << 10)
+	if err != nil {
+		http.Error(w, "invalid form data", http.StatusBadRequest)
+		return
+	}
+
+	var prod product.Product
+	strID := r.PostFormValue("id")
+	prod.ID, err = strconv.ParseInt(strID, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid id param", http.StatusBadRequest)
+		return
+	}
+	titleStr := r.PostFormValue("title")
+	if titleStr == "" {
+		http.Error(w, "invalid title param", http.StatusBadRequest)
+		return
+	}
+	prod.Description = r.PostFormValue("description")
+	if err != nil {
+		http.Error(w, "invalid description param", http.StatusBadRequest)
+		return
+	}
+	prod.Price, err = strconv.ParseFloat(r.PostFormValue("price"), 64)
+	if err != nil {
+		http.Error(w, "invalid price param", http.StatusBadRequest)
+		return
+	}
+	coutStr := r.PostFormValue("count")
+	prod.Count, err = strconv.ParseInt(coutStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid count param", http.StatusBadRequest)
+		return
+	}
+	prod.Preview = r.PostFormValue("preview")
+	if prod.Preview == "" {
+		http.Error(w, "invalid preview param", http.StatusBadRequest)
+		return
+	}
+
+	file, fileHeader, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "invoke FormFile error:").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = os.Mkdir(fmt.Sprintf("%s/%v", s.saveImagesURL, prod.ID), os.ModeDir)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		http.Error(w, errors.Wrap(err, "failed to create dir for user image").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	localFileName := fmt.Sprintf("%s/%v/%s", s.saveImagesURL, prod.ID, fileHeader.Filename)
+	out, err := os.OpenFile("access.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		file.Close()
+		http.Error(w, errors.Wrap(err, fmt.Sprintf("failed to open the file %s for writing", localFileName)).Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(out, file)
+	if err != nil {
+		out.Close()
+		file.Close()
+		http.Error(w, errors.Wrap(err, "copy file err").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	out.Close()
+	file.Close()
+
+	prod.Image = localFileName
+
+	ownerIdStr := r.PostFormValue("owner")
+	prod.Owner.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid owner id param", http.StatusBadRequest)
+		return
+	}
+
+	err = s.productRepository.SaveProduct(ctx, &prod)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in save product data").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respData, err := json.Marshal(&prod)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(respData)
 
 }
 

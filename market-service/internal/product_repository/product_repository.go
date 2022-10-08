@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"market-service/internal/user_service"
+	"market-service/pkg/product"
 	product_model "market-service/pkg/product"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 type ProductRepository interface {
 	GetProduct(ctx context.Context, productID int64) (*product_model.Product, error)
+	SaveProduct(ctx context.Context, product *product.Product) error
 }
 
 func NewProductRepository(db *sql.DB) ProductRepository {
@@ -98,4 +100,28 @@ func (pr *productRepository) getProductComments(ctx context.Context, productID i
 	}
 
 	return comments, nil
+}
+
+func (pr *productRepository) SaveProduct(ctx context.Context, product *product.Product) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	_, err := pr.db.ExecContext(ctx,
+		`
+		insert into products (id, title, owner_id, preview, product_count, price, description)
+		values ($1, $2, $3, $4, $5, $6, $7);
+		`,
+		product.ID,
+		product.Title,
+		product.Owner.ID,
+		product.Preview,
+		product.Count,
+		product.Price,
+		product.Description,
+	)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }

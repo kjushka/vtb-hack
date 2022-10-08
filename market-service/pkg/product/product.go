@@ -12,7 +12,7 @@ type Product struct {
 	Price       float64            `json:"price"`
 	Count       int64              `json:"count"`
 	Preview     string             `json:"preview"`
-	Images      []string           `json:"images,omitempty"`
+	Image       string             `json:"image,omitempty"`
 	Owner       *user_service.User `json:"owner"`
 	Comments    []Comment          `json:"comments,omitempty"`
 }
