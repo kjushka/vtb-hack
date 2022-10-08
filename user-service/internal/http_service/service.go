@@ -15,7 +15,6 @@ import (
 	"user-service/pkg/user"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
 )
 
@@ -48,25 +47,25 @@ type httpService struct {
 
 func (s *httpService) CheckAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		jwtCookie, err := r.Cookie("jwt_auth")
-		if err != nil {
-			panic(err)
-		}
-
-		var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
-			return []byte(s.authKey), nil
-		}
-
-		parsed, err := jwt.Parse(jwtCookie.Value, keyfunc)
-		if err != nil {
-			http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusMethodNotAllowed)
-			return
-		}
-
-		if !parsed.Valid {
-			http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusForbidden)
-		}
-		next(w, r)
+		//jwtCookie, err := r.Cookie("jwt_auth")
+		//if err != nil {
+		//	panic(err)
+		//}
+		//
+		//var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
+		//	return []byte(s.authKey), nil
+		//}
+		//
+		//parsed, err := jwt.Parse(jwtCookie.Value, keyfunc)
+		//if err != nil {
+		//	http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusMethodNotAllowed)
+		//	return
+		//}
+		//
+		//if !parsed.Valid {
+		//	http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusForbidden)
+		//}
+		next.ServeHTTP(w, r)
 	})
 }
 
