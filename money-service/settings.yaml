@@ -1,0 +1,13 @@
+# service host
+host: 0.0.0.0
+# service port
+port: 8082
+# vtb credentials for cryptocurrency
+vtb_private_key:
+vtb_public_key:
+# Postgresql config
+pg_host: postgres
+pg_port: 5432
+pg_user: postgres
+pg_password: postgres
+pg_database: money_service

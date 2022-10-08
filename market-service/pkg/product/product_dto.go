@@ -10,7 +10,7 @@ type DTOProduct struct {
 	Count       int64   `json:"count"`
 	IsNFT       bool    `json:"isNFT"`
 	Preview     string  `json:"preview"`
-	OwnerID     int64   `json:"ownerId"`
+	SellerID    int64   `json:"sellerID"`
 }
 
 func DTOToProducts(dtos []DTOProduct) []Product {
@@ -24,7 +24,7 @@ func DTOToProducts(dtos []DTOProduct) []Product {
 			Count:       dto.Count,
 			Preview:     dto.Preview,
 			IsNFT:       dto.IsNFT,
-			Owner:       &user_service.User{},
+			Seller:      &user_service.User{},
 			Comments:    nil,
 		}
 		products = append(products, p)

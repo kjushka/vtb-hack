@@ -19,6 +19,7 @@ type ProductRepository interface {
 	GetProductsByIDs(ctx context.Context, userIDs []int64) ([]product.Product, error)
 	UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error)
 	DeleteProduct(ctx context.Context, productID int64) error
+	MakePurchase(ctx context.Context, p *product.Product, customerID, amount int64) error
 }
 
 func NewProductRepository(db *sqlx.DB) ProductRepository {
@@ -53,7 +54,7 @@ func (pr *productRepository) GetProduct(ctx context.Context, productID int64) (*
 func (pr *productRepository) getProduct(ctx context.Context, productID int64) (*product_model.Product, error) {
 	var err error
 	productQueryRow := pr.db.QueryRowContext(ctx, `
-		select id, title, description, price, count, is_nft, owner_id 
+		select id, title, description, price, product_count, is_nft, seller_id 
 		from products 
 		where id = $1;
 	`, productID)
@@ -61,7 +62,7 @@ func (pr *productRepository) getProduct(ctx context.Context, productID int64) (*
 		return nil, errors.WithStack(err)
 	}
 
-	productResult := &product_model.Product{Owner: &user_service.User{}}
+	productResult := &product_model.Product{Seller: &user_service.User{}}
 	err = productQueryRow.Scan(
 		&productResult.ID,
 		&productResult.Title,
@@ -69,7 +70,7 @@ func (pr *productRepository) getProduct(ctx context.Context, productID int64) (*
 		&productResult.Price,
 		&productResult.Count,
 		&productResult.IsNFT,
-		&productResult.Owner.ID,
+		&productResult.Seller.ID,
 	)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -114,11 +115,11 @@ func (pr *productRepository) SaveProduct(ctx context.Context, product *product.P
 
 	_, err := pr.db.ExecContext(ctx,
 		`
-		insert into products (title, owner_id, preview, product_count, price, description, in_nft)
+		insert into products (title, seller_id, preview, product_count, price, description, in_nft)
 		values ($1, $2, $3, $4, $5, $6, $7);
 		`,
 		product.Title,
-		product.Owner.ID,
+		product.Seller.ID,
 		product.Preview,
 		product.Count,
 		product.Price,
@@ -136,7 +137,7 @@ func (pr *productRepository) GetAllProducts(ctx context.Context) ([]product.Prod
 	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
 	defer cancel()
 
-	query := "select id, title, description, price, product_count as count, preview, owner_id as ownerId, is_nft as isNFT from products;"
+	query := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products;"
 
 	var productsDTO []product.DTOProduct
 	err := pr.db.SelectContext(ctx, &productsDTO, query)
@@ -152,7 +153,7 @@ func (pr *productRepository) GetProductsByIDs(ctx context.Context, productsIds [
 	defer cancel()
 
 	var err error
-	queryBase := "select id, title, description, price, product_count, preview, owner_id as ownerId, is_nft as isNFT from products where id in (?);"
+	queryBase := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products where id in (?);"
 	query, params, err := sqlx.In(queryBase, productsIds)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -178,7 +179,7 @@ func (prRep *productRepository) UpdateProduct(ctx context.Context, productId int
 		set
 		    title = $2,
 			description = $3,
-			count = $4,
+			product_count = $4,
 			owner_id = $5,
 			preview = $6,
 			price = $7
@@ -188,7 +189,7 @@ func (prRep *productRepository) UpdateProduct(ctx context.Context, productId int
 		pr.Title,
 		pr.Description,
 		pr.Count,
-		pr.Owner.ID,
+		pr.Seller.ID,
 		pr.Preview,
 		pr.Price,
 	)
@@ -248,6 +249,27 @@ func (pr *productRepository) DeleteProduct(ctx context.Context, productID int64)
 	}
 
 	tx.Commit()
+
+	return nil
+}
+
+func (pr *productRepository) MakePurchase(ctx context.Context, p *product.Product, customerID, amount int64) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	defer cancel()
+
+	_, err := pr.db.ExecContext(ctx,
+		`
+		insert into purchases (product_id, owner_id, buy_date, amount)
+		values ($1, $2, $3, $4, $5, $6, $7);
+		`,
+		p.ID,
+		customerID,
+		time.Now(),
+		amount,
+	)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
 	return nil
 }

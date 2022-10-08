@@ -9,7 +9,8 @@ import (
 
 type Config struct {
 	DBHost, DBPort, Database, DBUser, DBPass string
-	UserServiceURL                           string
+	UserServiceAPIURL                        string
+	MoneyServiceAPIURL                       string
 	SaveImagesURL                            string
 }
 
@@ -43,15 +44,26 @@ func InitConfig() (*Config, error) {
 	if !ok {
 		return nil, errors.New("PG_MARKET_PASS not found")
 	}
-	userServiceAPIURL := fmt.Sprintf("http://%s:%s/api/user_service/", userServiceHost, userServicePort)
+	userServiceAPIURL := fmt.Sprintf("http://%s:%s/user_service", userServiceHost, userServicePort)
+
+	moneyServiceHost, ok := os.LookupEnv("MONEY_SERVICE_HOST")
+	if !ok {
+		return nil, errors.New("MONEY_SERVICE_HOST not found")
+	}
+	moneyServicePort, ok := os.LookupEnv("MONEY_SERVICE_PORT")
+	if !ok {
+		return nil, errors.New("MONEY_SERVICE_PORT not found")
+	}
+	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api", moneyServiceHost, moneyServicePort)
 
 	config := &Config{
-		DBHost:         pgHost,
-		DBPort:         pgPort,
-		DBUser:         pgUser,
-		DBPass:         pgPass,
-		Database:       database,
-		UserServiceURL: userServiceAPIURL,
+		DBHost:             pgHost,
+		DBPort:             pgPort,
+		DBUser:             pgUser,
+		DBPass:             pgPass,
+		Database:           database,
+		UserServiceAPIURL:  userServiceAPIURL,
+		MoneyServiceAPIURL: moneyServiceAPIURL,
 	}
 	return config, nil
 }

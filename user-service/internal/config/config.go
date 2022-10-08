@@ -45,7 +45,7 @@ func InitConfig() (*Config, error) {
 	if !ok {
 		return nil, errors.New("MARKET_SERVICE_PORT not found")
 	}
-	marketServiceAPIURL := fmt.Sprintf("http://%s:%s/api/market/", marketServiceHost, marketServicePort)
+	marketServiceAPIURL := fmt.Sprintf("http://%s:%s/market", marketServiceHost, marketServicePort)
 
 	moneyServiceHost, ok := os.LookupEnv("MONEY_SERVICE_HOST")
 	if !ok {
@@ -55,7 +55,7 @@ func InitConfig() (*Config, error) {
 	if !ok {
 		return nil, errors.New("MONEY_SERVICE_PORT not found")
 	}
-	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api/wallet", moneyServiceHost, moneyServicePort)
+	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api", moneyServiceHost, moneyServicePort)
 
 	saveImagesURL, ok := os.LookupEnv("SAVE_IMAGES_PATH")
 	if !ok {

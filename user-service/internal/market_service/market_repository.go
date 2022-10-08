@@ -25,7 +25,7 @@ func NewMarketService(marketServiceAPIURL string) MarketService {
 }
 
 func (marketServ *marketService) GetUserProducts(userID int64) ([]Product, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/products/%v", marketServ.marketServiceAPIURL, userID))
+	resp, err := http.Get(fmt.Sprintf("%s/products/users/%v", marketServ.marketServiceAPIURL, userID))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -45,7 +45,7 @@ func (marketServ *marketService) GetUserProducts(userID int64) ([]Product, error
 }
 
 func (marketServ *marketService) GetUserPurchases(userID int64) ([]Purchase, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/purchases/%v", marketServ.marketServiceAPIURL, userID))
+	resp, err := http.Get(fmt.Sprintf("%s/purchases/users/%v", marketServ.marketServiceAPIURL, userID))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

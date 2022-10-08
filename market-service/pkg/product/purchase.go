@@ -1,4 +1,4 @@
-package market_service
+package product
 
 import "time"
 

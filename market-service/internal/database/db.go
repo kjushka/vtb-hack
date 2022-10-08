@@ -2,8 +2,8 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"market-service/internal/config"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -27,7 +27,7 @@ func InitDB(cfg *config.Config) (*sqlx.DB, error) {
 	err = db.Ping()
 	if err != nil {
 		for err != nil {
-			log.Println(errors.Wrap(err, "couldn't make ping").Error())
+			time.Sleep(time.Second * 2)
 			err = db.Ping()
 		}
 	}

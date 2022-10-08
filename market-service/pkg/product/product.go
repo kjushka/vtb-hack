@@ -14,7 +14,7 @@ type Product struct {
 	Preview     string  `json:"preview"`
 	IsNFT       bool    `json:"isNFT"`
 	//Images      []string           `json:"images,omitempty"`
-	Owner    *user_service.User `json:"owner"`
+	Seller   *user_service.User `json:"seller"`
 	Comments []Comment          `json:"comments,omitempty"`
 }
 

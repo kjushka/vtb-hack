@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"market-service/internal/config"
+	"market-service/internal/money_service"
 	"market-service/internal/product_repository"
 	"market-service/internal/user_service"
 	"market-service/pkg/product"
@@ -33,10 +34,12 @@ type Service interface {
 }
 
 func NewService(db *sqlx.DB, cfg *config.Config) Service {
-	userService := user_service.NewUserService(cfg.UserServiceURL)
+	userService := user_service.NewUserService(cfg.UserServiceAPIURL)
 	productRepository := product_repository.NewProductRepository(db)
+	moneyService := money_service.NewMoneyService(cfg.MoneyServiceAPIURL)
 	return &httpService{
 		productRepository: productRepository,
+		moneyService:      moneyService,
 		userService:       userService,
 		saveImagesURL:     cfg.SaveImagesURL,
 	}
@@ -44,6 +47,7 @@ func NewService(db *sqlx.DB, cfg *config.Config) Service {
 
 type httpService struct {
 	productRepository product_repository.ProductRepository
+	moneyService      money_service.MoneyService
 	userService       user_service.UserService
 	saveImagesURL     string
 }
@@ -88,7 +92,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ownerIdStr := r.PostFormValue("owner")
-	prod.Owner.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
+	prod.Seller.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
 	if err != nil {
 		http.Error(w, "invalid owner id param", http.StatusBadRequest)
 		return
@@ -132,7 +136,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	file.Close()
 
 	prod.Preview = localFileName
-	prod.Owner = &user_service.User{}
+	prod.Seller = &user_service.User{}
 
 	err = s.productRepository.SaveProduct(ctx, &prod)
 	if err != nil {
@@ -301,5 +305,53 @@ func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	buyRequest := struct {
+		ProductID  int64 `json:"productID"`
+		CustomerID int64 `json:"userID"`
+		Amount     int64 `json:"amount"`
+	}{}
+	buf, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+	err = json.Unmarshal(buf, &buyRequest)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	p, err := s.productRepository.GetProduct(ctx, buyRequest.ProductID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting product").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	customerBalance, err := s.moneyService.GetUserBalance(buyRequest.CustomerID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting customerID").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	total := p.Price * float64(buyRequest.Amount)
+	if customerBalance.Balance < total {
+		http.Error(w, errors.New("not enough money to make purchase").Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = s.moneyService.MakePurchase(buyRequest.CustomerID, p.Seller.ID, total)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in make transaction").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = s.productRepository.MakePurchase(ctx, p, buyRequest.CustomerID, buyRequest.Amount)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in create purchase").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
