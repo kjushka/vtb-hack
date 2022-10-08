@@ -10,6 +10,7 @@ import (
 	"market-service/pkg/product"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -86,19 +87,33 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ownerIdStr := r.PostFormValue("owner")
+	prod.Owner.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid owner id param", http.StatusBadRequest)
+		return
+	}
+
+	isNFTStr := r.PostFormValue("isNFT")
+	prod.IsNFT, err = strconv.ParseBool(isNFTStr)
+	if err != nil {
+		http.Error(w, "invalid isNFT param", http.StatusBadRequest)
+		return
+	}
+
 	file, fileHeader, err := r.FormFile("preview")
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "invoke FormFile error:").Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = os.Mkdir(fmt.Sprintf("%s/%v", s.saveImagesURL, prod.ID), os.ModeDir)
+	err = os.MkdirAll(path.Join(s.saveImagesURL, strconv.FormatInt(prod.ID, 10)), os.ModeDir)
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		http.Error(w, errors.Wrap(err, "failed to create dir for user image").Error(), http.StatusInternalServerError)
 		return
 	}
 
-	localFileName := fmt.Sprintf("%s/%v/%s", s.saveImagesURL, prod.ID, fileHeader.Filename)
+	localFileName := path.Join(s.saveImagesURL, strconv.FormatInt(prod.ID, 10), fileHeader.Filename)
 	out, err := os.OpenFile(localFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		file.Close()
@@ -117,13 +132,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	file.Close()
 
 	prod.Preview = localFileName
-	prod.Owner = user_service.User{}
-	ownerIdStr := r.PostFormValue("owner")
-	prod.Owner.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid owner id param", http.StatusBadRequest)
-		return
-	}
+	prod.Owner = &user_service.User{}
 
 	err = s.productRepository.SaveProduct(ctx, &prod)
 	if err != nil {
@@ -160,14 +169,14 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product, err := s.productRepository.GetProduct(ctx, productID)
+	p, err := s.productRepository.GetProduct(ctx, productID)
 	if err != nil {
 		err = errors.Wrap(err, "error in getting product")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := json.Marshal(product)
+	resp, err := json.Marshal(p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -271,7 +280,24 @@ func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
+	productIDStr := chi.URLParam(r, "id")
+	if productIDStr == "" {
+		http.Error(w, "empty product id", http.StatusBadRequest)
+		return
+	}
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "invalid product id").Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = s.productRepository.DeleteProduct(ctx, productID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in deleting product").Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {

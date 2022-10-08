@@ -7,6 +7,7 @@ create table if not exists products
     description text not null check (description <> ''),
     price integer not null check (price >= 0),
     product_count integer not null check (product_count >= 0),
+    is_nft bool not null,
     preview varchar unique,
     owner_id integer not null
 );

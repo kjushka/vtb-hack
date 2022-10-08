@@ -26,8 +26,8 @@ services:
       - 8080:8080
     networks:
       - bridge-network
-    volumes:
-      - ./public/market_products:/tmp/var/public/market_products
+    #volumes:
+    #  - ./public/market_products:/tmp/var/public/market_products
     user: root
     restart: always
 
@@ -58,8 +58,8 @@ services:
       - 8081:8081
     networks:
       - bridge-network
-    volumes:
-      - ./public/users:/tmp/var/public/users
+    #volumes:
+    #  - ./public/users:/tmp/var/public/users
     user: root
     restart: always
 
