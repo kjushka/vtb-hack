@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"user-service/internal/config"
+	"user-service/internal/money_service"
 	"user-service/internal/user_repository"
 	"user-service/pkg/user"
 
@@ -32,9 +33,9 @@ type Service interface {
 }
 
 func NewService(db *sqlx.DB, cfg *config.Config) Service {
-	userRepository := user_repository.NewUserRepository(db)
 	return &httpService{
-		userRepository: userRepository,
+		userRepository: user_repository.NewUserRepository(db),
+		moneyService:   money_service.NewMoneyService(cfg.MoneyServiceAPIURL),
 		saveImagesURL:  cfg.SaveImagesURL,
 		authKey:        cfg.AuthKey,
 	}
@@ -42,6 +43,7 @@ func NewService(db *sqlx.DB, cfg *config.Config) Service {
 
 type httpService struct {
 	userRepository user_repository.UserRepository
+	moneyService   money_service.MoneyService
 	saveImagesURL  string
 	authKey        string
 }
@@ -135,7 +137,7 @@ func (s *httpService) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	localFileName := fmt.Sprintf("%s/%v/%s", s.saveImagesURL, u.ID, fileHeader.Filename)
-	out, err := os.OpenFile("access.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	out, err := os.OpenFile(localFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		file.Close()
 		http.Error(w, errors.Wrap(err, fmt.Sprintf("failed to open the file %s for writing", localFileName)).Error(), http.StatusInternalServerError)
@@ -159,6 +161,13 @@ func (s *httpService) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errors.Wrap(err, "error in save user data").Error(), http.StatusInternalServerError)
 		return
 	}
+
+	balance, err := s.moneyService.CreateWallet(u.ID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting user balance").Error(), http.StatusInternalServerError)
+		return
+	}
+	u.Balance = balance.Balance
 
 	respData, err := json.Marshal(&u)
 	if err != nil {
@@ -190,6 +199,13 @@ func (s *httpService) GetUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errors.Wrap(err, "error in getting user").Error(), http.StatusInternalServerError)
 		return
 	}
+
+	balance, err := s.moneyService.GetUserBalance(userID)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting user balance").Error(), http.StatusInternalServerError)
+		return
+	}
+	u.Balance = balance.Balance
 
 	result, err := json.Marshal(u)
 	if err != nil {
@@ -316,6 +332,13 @@ func (s *httpService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		err = os.RemoveAll(s.saveImagesURL + userIDStr)
+		if err != nil {
+			log.Println(errors.Wrap(err, "error in deleting user picture"))
+		}
+	}()
+
+	go func() {
+		err = s.moneyService.DeleteWallet(userID)
 		if err != nil {
 			log.Println(errors.Wrap(err, "error in deleting user picture"))
 		}
