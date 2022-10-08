@@ -59,7 +59,7 @@ func (pr *productRepository) getProduct(ctx context.Context, productID int64) (*
 		return nil, errors.WithStack(err)
 	}
 
-	productResult := &product_model.Product{Owner: &user_service.User{}}
+	productResult := &product_model.Product{Owner: user_service.User{}}
 	err = productQueryRow.Scan(
 		&productResult.ID,
 		&productResult.Title,
@@ -111,10 +111,9 @@ func (pr *productRepository) SaveProduct(ctx context.Context, product *product.P
 
 	_, err := pr.db.ExecContext(ctx,
 		`
-		insert into products (id, title, owner_id, preview, product_count, price, description)
-		values ($1, $2, $3, $4, $5, $6, $7);
+		insert into products (title, owner_id, preview, product_count, price, description)
+		values ($1, $2, $3, $4, $5, $6);
 		`,
-		product.ID,
 		product.Title,
 		product.Owner.ID,
 		product.Preview,
@@ -133,7 +132,7 @@ func (pr *productRepository) GetAllProducts(ctx context.Context) ([]product.Prod
 	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
 	defer cancel()
 
-	query := "select id, title, description, price, count, preview, owner from products;"
+	query := "select id, title, description, price, product_count as count, preview, owner_id from products;"
 
 	var products []product.Product
 	err := pr.db.SelectContext(ctx, &products, query)
@@ -149,7 +148,7 @@ func (pr *productRepository) GetProductsByIDs(ctx context.Context, productsIds [
 	defer cancel()
 
 	var err error
-	queryBase := "select id, title, description, price, count, preview, owner from products where id in (?);"
+	queryBase := "select id, title, description, price, product_count, preview, owner_id from products where id in (?);"
 	query, params, err := sqlx.In(queryBase, productsIds)
 	if err != nil {
 		return nil, errors.WithStack(err)

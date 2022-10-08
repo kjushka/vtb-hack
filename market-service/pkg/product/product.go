@@ -13,8 +13,8 @@ type Product struct {
 	Count       int64   `json:"count"`
 	Preview     string  `json:"preview"`
 	//Images      []string           `json:"images,omitempty"`
-	Owner    *user_service.User `json:"owner"`
-	Comments []Comment          `json:"comments,omitempty"`
+	Owner    user_service.User `json:"owner"`
+	Comments []Comment         `json:"comments,omitempty"`
 }
 
 type Comment struct {

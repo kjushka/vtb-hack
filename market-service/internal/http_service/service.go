@@ -62,13 +62,9 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var prod product.Product
-	strID := r.PostFormValue("id")
-	prod.ID, err = strconv.ParseInt(strID, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid id param", http.StatusBadRequest)
-		return
-	}
+
 	titleStr := r.PostFormValue("title")
+	prod.Title = titleStr
 	if titleStr == "" {
 		http.Error(w, "invalid title param", http.StatusBadRequest)
 		return
@@ -121,7 +117,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	file.Close()
 
 	prod.Preview = localFileName
-
+	prod.Owner = user_service.User{}
 	ownerIdStr := r.PostFormValue("owner")
 	prod.Owner.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
 	if err != nil {
