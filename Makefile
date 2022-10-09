@@ -4,12 +4,12 @@ run:
 	docker compose logs -f
 
 stop:
-	docker-compose stop
+	docker compose stop
 
 down:
-	docker-compose down
+	docker compose down
 
 logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 restart: down run
