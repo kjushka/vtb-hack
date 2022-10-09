@@ -12,6 +12,7 @@ type Config struct {
 	UserServiceAPIURL                        string
 	MoneyServiceAPIURL                       string
 	SaveImagesURL                            string
+	AuthKey                                  string
 }
 
 func InitConfig() (*Config, error) {
@@ -56,6 +57,11 @@ func InitConfig() (*Config, error) {
 	}
 	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api", moneyServiceHost, moneyServicePort)
 
+	authKey, ok := os.LookupEnv("AUTH_KEY")
+	if !ok {
+		return nil, errors.New("AUTH_KEY not found")
+	}
+
 	config := &Config{
 		DBHost:             pgHost,
 		DBPort:             pgPort,
@@ -64,6 +70,7 @@ func InitConfig() (*Config, error) {
 		Database:           database,
 		UserServiceAPIURL:  userServiceAPIURL,
 		MoneyServiceAPIURL: moneyServiceAPIURL,
+		AuthKey:            authKey,
 	}
 	return config, nil
 }
