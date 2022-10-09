@@ -1,0 +1,13 @@
+@import "../style.module.scss";
+.button {
+    border: none;
+    background: none;
+    color: $light_blue;
+    font-weight: 600;
+    &:hover {
+        box-shadow: none;
+    }
+    &:active {
+        box-shadow: none;
+    }
+}

@@ -1,0 +1,23 @@
+@import "../../styles/variables.scss";
+.tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    &_loader {
+        height: 220px;
+    }
+    &_headline {
+        margin: 0;
+    }
+    &_container {
+        width: 100%;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    &_description {
+        z-index: 100000;
+        border-radius: 8px;
+        padding: 20px;
+    }
+}

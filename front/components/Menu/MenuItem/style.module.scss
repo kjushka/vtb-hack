@@ -1,0 +1,55 @@
+@import "../style.module.scss";
+
+.menu-item {
+    position: relative;
+    transition: all 0.2s;
+    width: 220px;
+    min-width: 55px;
+    height: 55px;
+    border-radius: 12px;
+    display: flex;
+    // justify-content: center;
+    flex-direction: row;
+    overflow: hidden;
+    justify-content: flex-start;
+    align-items: center;
+    transition: all 0.2s;
+    flex-direction: row;
+    padding: 15px;
+    // background-color: red;
+    &-icon {
+        position: absolute;
+        left: 12.5px;
+        transition: all 0.2s;
+        width: 30px;
+        height: 30px;
+        color: rgba($color: #ffffff, $alpha: 0.8);
+    }
+    & span {
+        position: absolute;
+        left: 55px;
+        visibility: hidden;
+        color: #ffffff;
+    }
+    &__full {
+        // justify-content: flex-start;
+        & span {
+            visibility: visible;
+        }
+        gap: 10px;
+        font-weight: 600;
+    }
+    &__selected {
+        box-shadow: 0 0px 2px 0.5px rgba($color: #ffffff, $alpha: 0.5);
+        // box-shadow: 0 0px 2px 1px rgba($color: #ffffff, $alpha: 0.5);
+        background-color: rgba($color: #ffffff, $alpha: 0.3);
+        & .menu-item-icon {
+            // color: rgba($color: rgb(0, 4, 255), $alpha: 0.8);
+            color: rgba($color: #ffdb0d, $alpha: 0.8);
+        }
+    }
+    &:hover {
+        box-shadow: 0 0px 2px 1px rgba($color: #ffffff, $alpha: 0.1);
+        background-color: rgba($color: #ffffff, $alpha: 0.1);
+    }
+}

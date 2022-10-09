@@ -1,0 +1,92 @@
+@import '../../../../styles/variables.scss';
+.file {
+    display: inline-block;
+    &_preview {
+        padding: 10px 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        background-color: rgba(23, 112, 255, 0.3);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        &__content {
+            cursor: pointer;
+            display: inline-block;
+            width: 150px;
+            vertical-align: top;
+            position: relative;
+            &--img {
+                width: 150px;
+            }
+            &--label {
+                cursor: pointer;
+                text-align: center;
+                display: block;
+                font-size: 12px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+            &--icon {
+                cursor: pointer;
+                color: $blue;
+                text-decoration: none;
+                display: inline-block;
+                position: absolute;
+                padding: 0;
+                margin: 0;
+                top: 5px;
+                right: 5px;
+                background-color: $white;
+                width: 16px;
+                height: 16px;
+                text-align: center;
+                line-height: 16px;
+                border-radius: 50%;
+            }
+        }
+    }
+    &_input {
+        width: 100%;
+        position: relative;
+        display: inline-block;
+        & input[type=file] {
+            position: absolute;
+            z-index: -1;
+            opacity: 0;
+            display: block;
+            width: 0;
+            height: 0;
+        }
+        & span {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            background-color: $light_blue;
+            color: $white;
+            box-sizing: border-box;
+            width: 100%;
+            height: 44px;
+            border: 0;
+            outline: none;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            &:hover {
+                cursor: pointer;
+                box-shadow: $box-shadow-input;
+            }
+            &:active {
+                box-shadow: $box-shadow-input-hover;
+            }
+        }
+    }
+}

@@ -1,0 +1,16 @@
+@import "../../styles/variables.scss";
+.root {
+    padding: 40px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 50px;
+    & .button {
+        border-color: $light_blue;
+        color: $light_blue;
+    }
+}
+
+.custom-notification {
+    color: $light_blue;
+}

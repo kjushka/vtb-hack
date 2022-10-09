@@ -1,0 +1,9 @@
+.review {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &-editor {
+        border-radius: 4px;
+    }
+}

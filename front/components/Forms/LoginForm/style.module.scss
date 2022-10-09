@@ -1,0 +1,36 @@
+@import "../../../styles/variables.scss";
+
+.form {
+    width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    position: relative;
+
+    &-loader-container {
+        z-index: 1;
+        position: absolute;
+        top: -10%;
+        left: -10%;
+        width: 120%;
+        height: 120%;
+        backdrop-filter: blur(5px);
+    }
+
+    &-input-container {
+        width: 100%;
+        &-input {
+            width: 100%;
+            // border: 2px solid $light_blue;
+            border-radius: 4px;
+
+            &_error {
+                border: 2px solid $red;
+            }
+        }
+    }
+    &-button {
+        width: 250px;
+    }
+}

@@ -1,0 +1,36 @@
+@import "../style.module.scss";
+
+.island {
+    background: rgba($color: $light_blue, $alpha: 0.2);
+
+    &_progress {
+        z-index: 1;
+        background-color: rgba($color: $light_blue, $alpha: 0.2);
+    }
+
+    &_circle {
+        background-color: rgba($color: $light_blue, $alpha: 0.8);
+    }
+
+    &_content {
+        &_text {
+            &_header {
+                color: $light_blue;
+            }
+            &_description {
+                color: $black;
+            }
+        }
+
+        &_footer {
+            &_button {
+                color: $light_blue;
+                font-weight: 600;
+                border-color: $light_blue;
+            }
+            &_price {
+                color: $light_blue;
+            }
+        }
+    }
+}

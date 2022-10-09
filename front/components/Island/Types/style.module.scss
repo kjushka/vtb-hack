@@ -1,0 +1,144 @@
+@import "../../../styles/variables.scss";
+
+.island {
+    box-sizing: border-box;
+    width: 400px;
+    height: 220px;
+    background: $island_gradient;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    padding: 26px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-shadow: $box-shadow-input;
+
+    &_progress {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 20px;
+        width: 100%;
+        background-color: rgba($color: #ffffff, $alpha: 0.2);
+
+        &__filled {
+            transition: width 0.2s;
+            width: 0;
+            background-color: #27ae60;
+            height: 100%;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            & span {
+                color: #ffffff;
+            }
+        }
+    }
+
+    &_circle {
+        width: 222px;
+        height: 222px;
+        border-radius: 50%;
+        background-color: rgba($color: #ffffff, $alpha: 0.2);
+        position: absolute;
+        transform: translate(50%, -50%);
+        right: 0;
+        top: 0;
+
+        &_union {
+            position: absolute;
+            transform: translate(50%, -50%);
+            left: 32px;
+            bottom: 34px;
+        }
+    }
+
+    &_badge {
+        width: fit-content;
+        background: #ffffff;
+        border: 1px solid #f1f1f1;
+        box-shadow: 0px 4px 4px rgba(51, 51, 51, 0.04), 0px 4px 16px rgba(51, 51, 51, 0.08);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        border-radius: 100px;
+        padding: 1px 8px;
+        color: $light_blue;
+        font-weight: 600;
+    }
+
+    &_content {
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        gap: 16px;
+
+        &_text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            &_header {
+                color: #ffffff;
+                font-weight: 700;
+                font-size: 20px;
+                line-height: 28px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 1;
+                width: 85%;
+            }
+
+            &_description {
+                font-weight: 400;
+                font-size: 16px;
+                line-height: 24px;
+                color: rgba(255, 255, 255, 0.88);
+                text-overflow: ellipsis;
+                overflow: hidden;
+                // white-space: nowrap;
+                // height: 48px;
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 2;
+            }
+        }
+
+        &_footer {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+            align-items: center;
+
+            &_button {
+                width: 100px;
+                color: white;
+                border-color: white;
+                height: 44px;
+            }
+
+            &_price {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                font-weight: 400;
+                font-size: 16px;
+                line-height: 24px;
+                color: rgba(255, 255, 255, 0.88);
+                gap: 4px;
+
+                &_icon {
+                    // box-shadow: 0px 4px 4px rgba(51, 51, 51, 0.1);
+                    fill: #ffdb0d;
+                }
+            }
+        }
+    }
+}

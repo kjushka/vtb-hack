@@ -99,6 +99,22 @@ services:
     depends_on:
       pgs:
         condition: service_healthy
+    user: root
+    restart: always
+
+  front:
+    build:
+      dockerfile: front.Dockerfile
+    container_name: front
+    ports:
+      - 3000:3000
+    networks:
+      - bridge-network
+    depends_on:
+      pgs:
+        condition: service_healthy
+    user: root
+    restart: always
 
   pgs:
     container_name: postgres
@@ -108,7 +124,7 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    #  - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
     ports:
       - 5432:5432
     healthcheck:

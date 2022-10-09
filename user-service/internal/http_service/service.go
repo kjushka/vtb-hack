@@ -120,11 +120,11 @@ func (s *httpService) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid email param", http.StatusBadRequest)
 		return
 	}
-	u.PhoneNumber = r.PostFormValue("phoneNumber")
-	if u.PhoneNumber == "" {
-		http.Error(w, "invalid phone number param", http.StatusBadRequest)
-		return
-	}
+	//u.PhoneNumber = r.PostFormValue("phoneNumber")
+	//if u.PhoneNumber == "" {
+	//	http.Error(w, "invalid phone number param", http.StatusBadRequest)
+	//	return
+	//}
 	u.Department = r.PostFormValue("department")
 	if u.Department == "" {
 		http.Error(w, "invalid department param", http.StatusBadRequest)

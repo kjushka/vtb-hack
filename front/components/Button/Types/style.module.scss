@@ -1,0 +1,33 @@
+@import "../../../styles/variables.scss";
+.button {
+    box-sizing: border-box;
+    width: 100%;
+    height: 44px;
+    border: 0;
+    outline: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border: 2px solid $light_blue;
+    border-radius: 4px;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    color: $light_blue;
+    & svg {
+        width: 24px;
+        height: 24px;
+    }
+    &:disabled {
+        opacity: 0.5;
+    }
+    &:hover {
+        cursor: pointer;
+        box-shadow: $box-shadow-input;
+    }
+    &:active {
+        box-shadow: $box-shadow-input-hover;
+    }
+}

@@ -1,0 +1,29 @@
+@import "../../style.module.scss";
+.popup-confirm {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    &_circle {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 96px;
+        height: 96px;
+        background: $light_yellow;
+        border-radius: 50%;
+    }
+    &_description {
+        text-align: center;
+        font-weight: 700;
+        font-size: 32px;
+        line-height: 40px;
+    }
+    &_btns {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 20px;
+    }
+}

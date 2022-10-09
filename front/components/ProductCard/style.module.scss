@@ -1,0 +1,109 @@
+@import "../../styles/variables.scss";
+
+.card {
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: $box-shadow-input;
+
+    &-image {
+        height: 180px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(23, 112, 255, 0.3);
+
+        &_empty {
+            height: 120%;
+        }
+
+        & img {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    &-content {
+        margin-top: 16px;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 24px;
+        gap: 16px;
+
+        &-header {
+            font-weight: 800;
+            font-size: 20px;
+            line-height: 25px;
+        }
+
+        &-description {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+        }
+
+        &-price {
+            font-size: 24px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+
+            &-icon {
+                fill: #ffdb0d;
+            }
+        }
+
+        &-footer {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+
+            &-user {
+                display: flex;
+                flex-direction: row;
+                gap: 8px;
+                align-items: center;
+
+                &-avatar {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    & img {
+                        width: auto;
+                        height: 100%;
+                    }
+                }
+
+                &-name {
+                    color: $light_blue;
+                    font-weight: 600;
+                }
+
+                &:hover {
+                    cursor: pointer;
+                }
+            }
+
+            &-reed-more {
+                width: fit-content;
+                font-weight: 600;
+                font-size: inherit;
+
+                & svg {
+                    width: 20px;
+                    height: 20px;
+                }
+            }
+        }
+    }
+}

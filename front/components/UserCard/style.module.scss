@@ -1,0 +1,43 @@
+@import '../../styles/variables.scss';
+.user-card {
+    box-sizing: border-box;
+    display: flex;
+    width: 400px;
+    height: 150px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: $box-shadow-input;
+    &_avatar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        width: 30%;
+        background-color: rgba(23, 112, 255, 0.3);
+        overflow: hidden;
+        border-radius: 8px 0 0 8px;
+        & img {
+            width: 100%;
+        }
+        &--empty {
+            width: 80%;
+            height: 80%;
+        }
+    }
+    &_info {
+        position: relative;
+        padding: 20px;
+        &>a {
+            &:hover {
+                color: $light_blue;
+            }
+        }
+    }
+    &_button {
+        position: absolute;
+        width: fit-content;
+        bottom: 0;
+        right: -25px;
+    }
+}

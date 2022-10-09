@@ -1,0 +1,8 @@
+@import "../style.module.scss";
+
+.button {
+    border: none;
+    background-color: rgba($color: $light_blue, $alpha: 0.5);
+    color: $light_blue;
+    font-weight: 600;
+}

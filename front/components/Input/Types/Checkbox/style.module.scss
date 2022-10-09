@@ -1,0 +1,90 @@
+    @import '../../../../styles/variables.scss';
+    .container {
+        cursor: pointer;
+        display: block;
+        position: relative;
+        padding-left: 36px;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 24px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 24px;
+            width: 24px;
+            background: $white;
+            border: 1px solid #D4D4D4;
+            border-radius: 4px;
+            &:after {
+                content: "";
+                position: absolute;
+                display: none;
+            }
+        }
+        & .checkmark:after {
+            left: 40%;
+            top: 10%;
+            width: 3px;
+            height: 10px;
+            border: 1px solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        &-disabled {
+            cursor: auto;
+            opacity: 0.5;
+        }
+        & input {
+            cursor: pointer;
+            position: absolute;
+            opacity: 0;
+            height: 0;
+            width: 0;
+            &~.checkmark {
+                &:hover {
+                    background: #FAFAFA;
+                }
+            }
+            &:checked {
+                &~.checkmark {
+                    background-color: $light_blue;
+                    border-color: $light_blue;
+                    &:after {
+                        display: block;
+                    }
+                    &:hover {
+                        background-color: rgb(20, 106, 245);
+                    }
+                    &:active {
+                        background-color: rgb(0, 94, 245);
+                    }
+                    &:focus {
+                        background-color: $light_blue;
+                        border: 2px solid rgba(17, 17, 17, 0.48);
+                    }
+                }
+            }
+            &:disabled {
+                cursor: auto;
+                background: $white;
+                border: 1px solid #D4D4D4;
+                &~.checkmark:hover {
+                    background: $white;
+                }
+            }
+        }
+        &:active {
+            & input~.checkmark {
+                background: #F1F1F1;
+            }
+        }
+        &:focus input~.checkmark {
+            background: $white;
+            border: 2px solid rgba(17, 17, 17, 0.48);
+        }
+    }

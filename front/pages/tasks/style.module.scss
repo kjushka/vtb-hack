@@ -1,0 +1,13 @@
+@import "../../styles/variables.scss";
+.root {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 50px;
+    &_headline {
+        margin: 0;
+        text-align: center;
+        text-transform: uppercase;
+    }
+}

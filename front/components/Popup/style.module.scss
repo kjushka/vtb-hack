@@ -1,0 +1,50 @@
+@import "../../styles/variables.scss";
+.popup {
+    position: fixed;
+    width: 350px;
+    height: 250px;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: $white;
+    box-shadow: 0px 4px 4px rgba(51, 51, 51, 0.04), 0px 4px 16px rgba(51, 51, 51, 0.08);
+    border-radius: 8px;
+    outline: none;
+    padding: 20px;
+    z-index: 11;
+    transition: all 1s linear;
+    &_overlay {
+        z-index: 10;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.25);
+        transition: all 1s linear;
+    }
+}
+
+.confirm {
+    width: 450px;
+    height: 300px;
+}
+
+.custom {
+    max-width: 500px;
+    width: auto;
+    height: auto;
+}
+
+.ReactModal__Overlay {
+    opacity: 0;
+    transition: opacity 1s linear;
+}
+
+.ReactModal__Overlay--after-open {
+    transition: opacity 1s linear;
+}
+
+.ReactModal__Overlay--before-close {
+    transition: opacity 1s linear;
+}

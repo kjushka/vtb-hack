@@ -1,0 +1,72 @@
+@import "../../../../styles/variables.scss";
+
+.root {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+
+    & .task {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+        max-width: 1000px;
+
+        &-info {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 100%;
+
+            &-achievement {
+                display: flex;
+                flex-direction: column;
+                width: 200px;
+                text-align: center;
+                gap: 10px;
+
+                & img {
+                    width: 200px;
+                    height: 200px;
+                    border-radius: 50%;
+                }
+
+                & span {
+                    font-weight: 600;
+                }
+            }
+
+            &-main {
+                display: flex;
+                justify-content: row;
+                gap: 40px;
+
+                &-item {
+                    display: flex;
+                    flex-direction: column;
+                    flex-wrap: nowrap;
+                    // align-items: center;
+                    gap: 10px;
+
+                    & span {
+                        font-weight: 600;
+                    }
+
+                    &-users {
+                        display: flex;
+                        flex-direction: row;
+
+                        gap: 20px;
+                        flex-wrap: wrap;
+                        width: 500px;
+                        &-user {
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,48 @@
+@import "../../styles/variables.scss";
+
+.menu {
+    width: 80px;
+    height: 100%;
+    background: $menu_gradient;
+    box-shadow: 0 5px 5px rgba($color: #000000, $alpha: 0.4);
+    border-left: solid 1px rgba($color: #000000, $alpha: 0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0px;
+    overflow: hidden;
+    transition: width 0.3s ease-in-out;
+
+    &_hidden {
+        display: none;
+    }
+
+    &-header {
+        color: #ffffff;
+        width: 100%;
+        min-width: 55px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        &-icon {
+            width: 35px;
+            height: 35px;
+        }
+    }
+    &-items {
+        width: 100%;
+        padding: 0 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    &-avatar {
+        width: 100%;
+        padding: 0 10px;
+        display: flex;
+        justify-content: flex-start;
+    }
+}

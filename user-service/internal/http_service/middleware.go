@@ -17,6 +17,5 @@ func initMiddlewares(r chi.Router, s Service) {
 				handler.ServeHTTP(w, r)
 			})
 		},
-		s.CheckAuth,
 	)
 }
