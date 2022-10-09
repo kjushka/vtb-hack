@@ -1,18 +1,16 @@
 package http_service
 
 import (
+	"article-service/internal/article_repository"
+	"article-service/internal/config"
+	"article-service/internal/money_service"
+	"article-service/internal/user_service"
+	"article-service/pkg/article"
 	"encoding/json"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io"
-	"market-service/internal/config"
-	"market-service/internal/money_service"
-	"market-service/internal/product_repository"
-	"market-service/internal/user_service"
 	"market-service/pkg/product"
 	"net/http"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 
@@ -26,35 +24,32 @@ type Service interface {
 	CheckAuth(next http.Handler) http.Handler
 
 	// routes
-	CreateProduct(w http.ResponseWriter, r *http.Request)
-	GetProduct(w http.ResponseWriter, r *http.Request)
-	GetProducts(w http.ResponseWriter, r *http.Request)
-	EditProduct(w http.ResponseWriter, r *http.Request)
-	DeleteProduct(w http.ResponseWriter, r *http.Request)
+	CreateArticle(w http.ResponseWriter, r *http.Request)
+	GetArticle(w http.ResponseWriter, r *http.Request)
+	GetArticles(w http.ResponseWriter, r *http.Request)
+	EditArticle(w http.ResponseWriter, r *http.Request)
+	DeleteArticle(w http.ResponseWriter, r *http.Request)
 
-	BuyProduct(w http.ResponseWriter, r *http.Request)
-	GetUserProducts(w http.ResponseWriter, r *http.Request)
-	GetUserPurchases(w http.ResponseWriter, r *http.Request)
+	Thanks(w http.ResponseWriter, r *http.Request)
+	AddComment(w http.ResponseWriter, r *http.Request)
 }
 
 func NewService(db *sqlx.DB, cfg *config.Config) Service {
 	userService := user_service.NewUserService(cfg.UserServiceAPIURL)
-	productRepository := product_repository.NewProductRepository(db)
+	articleRepository := article_repository.NewArticleRepository(db)
 	moneyService := money_service.NewMoneyService(cfg.MoneyServiceAPIURL)
 	return &httpService{
-		productRepository: productRepository,
+		articleRepository: articleRepository,
 		moneyService:      moneyService,
 		userService:       userService,
-		saveImagesURL:     cfg.SaveImagesURL,
 		authKey:           cfg.AuthKey,
 	}
 }
 
 type httpService struct {
-	productRepository product_repository.ProductRepository
+	articleRepository article_repository.ArticleRepository
 	moneyService      money_service.MoneyService
 	userService       user_service.UserService
-	saveImagesURL     string
 	authKey           string
 }
 
@@ -83,7 +78,7 @@ func (s *httpService) CheckAuth(next http.Handler) http.Handler {
 	})
 }
 
-func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) CreateArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	err := r.ParseMultipartForm(32 << 10)
 	if err != nil {
@@ -91,85 +86,33 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var prod product.Product
+	var art article.Article
 
 	titleStr := r.PostFormValue("title")
-	prod.Title = titleStr
+	art.Title = titleStr
 	if titleStr == "" {
 		http.Error(w, "invalid title param", http.StatusBadRequest)
 		return
 	}
-	prod.Description = r.PostFormValue("description")
+	art.ArticleText = r.PostFormValue("articleText")
 	if err != nil {
-		http.Error(w, "invalid description param", http.StatusBadRequest)
+		http.Error(w, "invalid article text param", http.StatusBadRequest)
 		return
 	}
-	prod.Price, err = strconv.ParseFloat(r.PostFormValue("price"), 64)
+	art.Author = &user_service.User{}
+	art.Author.ID, err = strconv.ParseInt(r.PostFormValue("authorID"), 10, 64)
 	if err != nil {
-		http.Error(w, "invalid price param", http.StatusBadRequest)
-		return
-	}
-	coutStr := r.PostFormValue("count")
-	prod.Count, err = strconv.ParseInt(coutStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid count param", http.StatusBadRequest)
+		http.Error(w, "invalid author ID param", http.StatusBadRequest)
 		return
 	}
 
-	ownerIdStr := r.PostFormValue("owner")
-	prod.Seller.ID, err = strconv.ParseInt(ownerIdStr, 10, 64)
-	if err != nil {
-		http.Error(w, "invalid owner id param", http.StatusBadRequest)
-		return
-	}
-
-	isNFTStr := r.PostFormValue("isNFT")
-	prod.IsNFT, err = strconv.ParseBool(isNFTStr)
-	if err != nil {
-		http.Error(w, "invalid isNFT param", http.StatusBadRequest)
-		return
-	}
-
-	file, fileHeader, err := r.FormFile("preview")
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "invoke FormFile error:").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = os.MkdirAll(path.Join(s.saveImagesURL, strconv.FormatInt(prod.ID, 10)), os.ModeDir)
-	if err != nil && !errors.Is(err, os.ErrExist) {
-		http.Error(w, errors.Wrap(err, "failed to create dir for user image").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	localFileName := path.Join(s.saveImagesURL, strconv.FormatInt(prod.ID, 10), fileHeader.Filename)
-	out, err := os.OpenFile(localFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		file.Close()
-		http.Error(w, errors.Wrap(err, fmt.Sprintf("failed to open the file %s for writing", localFileName)).Error(), http.StatusInternalServerError)
-		return
-	}
-	_, err = io.Copy(out, file)
-	if err != nil {
-		out.Close()
-		file.Close()
-		http.Error(w, errors.Wrap(err, "copy file err").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	out.Close()
-	file.Close()
-
-	prod.Preview = localFileName
-	prod.Seller = &user_service.User{}
-
-	err = s.productRepository.SaveProduct(ctx, &prod)
+	err = s.articleRepository.SaveProduct(ctx, &art)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in save product data").Error(), http.StatusInternalServerError)
 		return
 	}
 
-	respData, err := json.Marshal(&prod)
+	respData, err := json.Marshal(&art)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
 		return
@@ -181,7 +124,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) GetArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var err error
 
@@ -198,7 +141,7 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := s.productRepository.GetProduct(ctx, productID)
+	p, err := s.articleRepository.GetProduct(ctx, productID)
 	if err != nil {
 		err = errors.Wrap(err, "error in getting product")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -228,7 +171,7 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) GetArticles(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var (
@@ -251,9 +194,9 @@ func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		products, outErr = s.productRepository.GetProductsByIDs(ctx, productIDs)
+		products, outErr = s.articleRepository.GetProductsByIDs(ctx, productIDs)
 	} else {
-		products, outErr = s.productRepository.GetAllProducts(ctx)
+		products, outErr = s.articleRepository.GetAllProducts(ctx)
 	}
 
 	if outErr != nil {
@@ -303,7 +246,7 @@ func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) EditArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	productIDStr := chi.URLParam(r, "id")
@@ -329,7 +272,7 @@ func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pr, err = s.productRepository.UpdateProduct(ctx, productId, pr)
+	pr, err = s.articleRepository.UpdateProduct(ctx, productId, pr)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in updating u").Error(), http.StatusInternalServerError)
 		return
@@ -346,7 +289,7 @@ func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
 	w.Write(respData)
 }
 
-func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	productIDStr := chi.URLParam(r, "id")
@@ -360,14 +303,14 @@ func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.productRepository.DeleteProduct(ctx, productID)
+	err = s.articleRepository.DeleteProduct(ctx, productID)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in deleting product").Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) Thanks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	buyRequest := struct {
@@ -386,7 +329,7 @@ func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := s.productRepository.GetProduct(ctx, buyRequest.ProductID)
+	p, err := s.articleRepository.GetProduct(ctx, buyRequest.ProductID)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in getting product").Error(), http.StatusInternalServerError)
 		return
@@ -410,7 +353,7 @@ func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.productRepository.MakePurchase(ctx, p, buyRequest.CustomerID, buyRequest.Amount)
+	err = s.articleRepository.MakePurchase(ctx, p, buyRequest.CustomerID, buyRequest.Amount)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in create purchase").Error(), http.StatusInternalServerError)
 		return
@@ -419,7 +362,7 @@ func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *httpService) GetUserProducts(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) AddComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var err error
 
@@ -436,7 +379,7 @@ func (s *httpService) GetUserProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	products, err := s.productRepository.GetUserProducts(ctx, userID)
+	products, err := s.articleRepository.GetUserProducts(ctx, userID)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in getting products").Error(), http.StatusInternalServerError)
 		return
@@ -470,7 +413,7 @@ func (s *httpService) GetUserPurchases(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	purchases, err := s.productRepository.GetUserPurchases(ctx, userID)
+	purchases, err := s.articleRepository.GetUserPurchases(ctx, userID)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in getting purchases").Error(), http.StatusInternalServerError)
 		return

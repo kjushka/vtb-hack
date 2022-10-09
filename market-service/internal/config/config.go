@@ -57,6 +57,11 @@ func InitConfig() (*Config, error) {
 	}
 	moneyServiceAPIURL := fmt.Sprintf("http://%s:%s/api", moneyServiceHost, moneyServicePort)
 
+	saveImagesURL, ok := os.LookupEnv("SAVE_IMAGES_PATH")
+	if !ok {
+		return nil, errors.New("SAVE_IMAGES_PATH not found")
+	}
+
 	authKey, ok := os.LookupEnv("AUTH_KEY")
 	if !ok {
 		return nil, errors.New("AUTH_KEY not found")
@@ -70,7 +75,9 @@ func InitConfig() (*Config, error) {
 		Database:           database,
 		UserServiceAPIURL:  userServiceAPIURL,
 		MoneyServiceAPIURL: moneyServiceAPIURL,
-		AuthKey:            authKey,
+		SaveImagesURL:      saveImagesURL,
+
+		AuthKey: authKey,
 	}
 	return config, nil
 }

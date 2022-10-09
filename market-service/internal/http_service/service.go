@@ -26,15 +26,15 @@ type Service interface {
 	CheckAuth(next http.Handler) http.Handler
 
 	// routes
-	CreateProduct(w http.ResponseWriter, r *http.Request)
-	GetProduct(w http.ResponseWriter, r *http.Request)
-	GetProducts(w http.ResponseWriter, r *http.Request)
-	EditProduct(w http.ResponseWriter, r *http.Request)
-	DeleteProduct(w http.ResponseWriter, r *http.Request)
+	CreateArticle(w http.ResponseWriter, r *http.Request)
+	GetArticle(w http.ResponseWriter, r *http.Request)
+	GetArticles(w http.ResponseWriter, r *http.Request)
+	EditArticle(w http.ResponseWriter, r *http.Request)
+	DeleteArticle(w http.ResponseWriter, r *http.Request)
 
-	BuyProduct(w http.ResponseWriter, r *http.Request)
+	Thanks(w http.ResponseWriter, r *http.Request)
 	AddFeedback(w http.ResponseWriter, r *http.Request)
-	GetUserProducts(w http.ResponseWriter, r *http.Request)
+	AddComment(w http.ResponseWriter, r *http.Request)
 	GetUserPurchases(w http.ResponseWriter, r *http.Request)
 }
 
@@ -84,7 +84,7 @@ func (s *httpService) CheckAuth(next http.Handler) http.Handler {
 	})
 }
 
-func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) CreateArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	err := r.ParseMultipartForm(32 << 10)
 	if err != nil {
@@ -182,7 +182,7 @@ func (s *httpService) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) GetArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var err error
 
@@ -229,7 +229,7 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) GetArticles(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var (
@@ -304,7 +304,7 @@ func (s *httpService) GetProducts(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) EditArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	productIDStr := chi.URLParam(r, "id")
@@ -347,7 +347,7 @@ func (s *httpService) EditProduct(w http.ResponseWriter, r *http.Request) {
 	w.Write(respData)
 }
 
-func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	productIDStr := chi.URLParam(r, "id")
@@ -368,7 +368,7 @@ func (s *httpService) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) Thanks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	buyRequest := struct {
@@ -420,7 +420,7 @@ func (s *httpService) BuyProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *httpService) GetUserProducts(w http.ResponseWriter, r *http.Request) {
+func (s *httpService) AddComment(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var err error
 
@@ -490,7 +490,17 @@ func (s *httpService) GetUserPurchases(w http.ResponseWriter, r *http.Request) {
 
 func (s *httpService) AddFeedback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var err error
+
+	productIDStr := chi.URLParam(r, "id")
+	if productIDStr == "" {
+		http.Error(w, errors.New("empty product id url param").Error(), http.StatusBadRequest)
+		return
+	}
+	productID, err := strconv.ParseInt(productIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "invalid product id url param").Error(), http.StatusBadRequest)
+		return
+	}
 
 	buf, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -504,6 +514,7 @@ func (s *httpService) AddFeedback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
 		return
 	}
+	comment.ProductID = productID
 
 	err = s.productRepository.AddComment(ctx, comment)
 	if err != nil {

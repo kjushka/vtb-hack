@@ -1,13 +1,13 @@
 package main
 
 import (
+	"article-service/internal/config"
+	"article-service/internal/database"
+	"article-service/internal/http_service"
+	"article-service/internal/migrations"
 	"log"
 	"net/http"
 	"os"
-	"user-service/internal/config"
-	"user-service/internal/database"
-	"user-service/internal/http_service"
-	"user-service/internal/migrations"
 
 	"github.com/pkg/errors"
 )

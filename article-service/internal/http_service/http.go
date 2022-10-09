@@ -1,7 +1,7 @@
 package http_service
 
 import (
-	"market-service/internal/config"
+	"article-service/internal/config"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"

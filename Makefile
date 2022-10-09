@@ -1,6 +1,7 @@
 run:
 	docker compose build --no-cache
 	docker compose up -d
+	docker compose logs -f
 
 stop:
 	docker-compose stop
@@ -8,7 +9,7 @@ stop:
 down:
 	docker-compose down
 
-logs: run
+logs:
 	docker-compose logs -f
 
-restart: down logs
+restart: down run

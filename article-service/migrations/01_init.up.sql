@@ -1,10 +1,10 @@
 begin;
 
-create table if not exists products
+create table if not exists articles
 (
     id serial primary key,
     title text not null check (title <> ''),
-    description text not null check (description <> ''),
+    article_text text not null check (description <> ''),
     price integer not null check (price >= 0),
     product_count integer not null check (product_count >= 0),
     is_nft bool not null,

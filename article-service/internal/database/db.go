@@ -1,8 +1,8 @@
 package database
 
 import (
+	"article-service/internal/config"
 	"fmt"
-	"market-service/internal/config"
 	"time"
 
 	"github.com/jmoiron/sqlx"

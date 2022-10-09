@@ -22,8 +22,9 @@ async def auth(login: str, password: str):
             AuthInfo.password == password
         ))).fetchone()
 
+        headers = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods' : 'POST, GET, DELETE, PUT', 'Access-Control-Allow-Headers' : 'Authorization, Origin, X-Requested-With, Content-Type, Accept'}
         if not user:
-            return JSONResponse({'error': 'Forbidden'}, status_code=403)
+            return JSONResponse({'error': 'Forbidden'}, status_code=403, headers=headers)
 
         roles = (await connection.execute(select(
             Role
@@ -32,7 +33,7 @@ async def auth(login: str, password: str):
             RoleUser.user_id == user['id']
         ))).fetchall()
 
-    response = JSONResponse({'result': {'login': login, 'id': user['id']}})
+    response = JSONResponse({'result': {'login': login, 'id': user['id']}}, headers=headers)
     response.set_cookie('auth_jwt', value=encode(
         {
             'id': user['id'],
@@ -49,12 +50,13 @@ USER_ROLE = 4
 
 
 async def register(login: str, password: str):
+    headers = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods' : 'POST, GET, DELETE, PUT', 'Access-Control-Allow-Headers' : 'Authorization, Origin, X-Requested-With, Content-Type, Accept'}
     try:
         async with DatabaseConnection.engine.begin() as connection:
             user = (await connection.execute(insert(AuthInfo).values(
                 login=login, password=sha512(password.encode()).hexdigest()
             ).returning(AuthInfo.id))).fetchone()
             await connection.execute(insert(RoleUser).values(user_id=user[0], role_id=USER_ROLE))
-        return JSONResponse({'result': {'registered': True, 'id': user['id']}})
+        return JSONResponse({'result': {'registered': True, 'id': user['id']}}, headers=headers)
     except IntegrityError:
-        return JSONResponse({'error': 'User already exists'}, status_code=403)
+        return JSONResponse({'error': 'User already exists'}, headers=headers, status_code=403)

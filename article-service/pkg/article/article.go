@@ -8,7 +8,7 @@ import (
 type Article struct {
 	ID           int64              `json:"id"`
 	Title        string             `json:"title"`
-	Text         string             `json:"text"`
+	ArticleText  string             `json:"articleText"`
 	CreationDate time.Time          `json:"creationDate"`
 	Likes        int64              `json:"likes"`
 	Author       *user_service.User `json:"author"`

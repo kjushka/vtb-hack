@@ -11,7 +11,6 @@ type Config struct {
 	DBHost, DBPort, Database, DBUser, DBPass string
 	UserServiceAPIURL                        string
 	MoneyServiceAPIURL                       string
-	SaveImagesURL                            string
 	AuthKey                                  string
 }
 
