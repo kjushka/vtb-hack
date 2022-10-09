@@ -1,0 +1,8 @@
+alembic
+asyncpg
+fastapi==0.83.0
+hypercorn==0.14.3
+pyjwt
+pytest
+pyyaml
+sqlalchemy[asyncio, mypy, asyncpg]

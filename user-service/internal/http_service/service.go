@@ -3,7 +3,6 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"io"
 	"log"
 	"net/http"
@@ -18,7 +17,9 @@ import (
 	"user-service/internal/user_repository"
 	"user-service/pkg/user"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
@@ -54,24 +55,25 @@ type httpService struct {
 
 func (s *httpService) CheckAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//jwtCookie, err := r.Cookie("jwt_auth")
-		//if err != nil {
-		//	panic(err)
-		//}
-		//
-		//var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
-		//	return []byte(s.authKey), nil
-		//}
-		//
-		//parsed, err := jwt.Parse(jwtCookie.Value, keyfunc)
-		//if err != nil {
-		//	http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusMethodNotAllowed)
-		//	return
-		//}
-		//
-		//if !parsed.Valid {
-		//	http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusForbidden)
-		//}
+		jwtCookie, err := r.Cookie("auth_jwt")
+		if err != nil {
+			http.Error(w, errors.Wrap(err, "error in getting cookie").Error(), http.StatusMethodNotAllowed)
+			return
+		}
+
+		var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
+			return []byte(s.authKey), nil
+		}
+
+		parsed, err := jwt.Parse(jwtCookie.Value, keyfunc)
+		if err != nil {
+			http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusMethodNotAllowed)
+			return
+		}
+
+		if !parsed.Valid {
+			http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusForbidden)
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -201,6 +203,10 @@ func (s *httpService) GetUser(w http.ResponseWriter, r *http.Request) {
 	u, err := s.userRepository.GetUser(ctx, userID)
 	if err != nil {
 		http.Error(w, errors.Wrap(err, "error in getting user").Error(), http.StatusInternalServerError)
+		return
+	}
+	if u == nil {
+		http.Error(w, errors.New("user not found").Error(), http.StatusNotFound)
 		return
 	}
 

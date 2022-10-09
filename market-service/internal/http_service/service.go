@@ -3,6 +3,7 @@ package http_service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"io"
 	"market-service/internal/config"
 	"market-service/internal/money_service"
@@ -45,6 +46,7 @@ func NewService(db *sqlx.DB, cfg *config.Config) Service {
 		moneyService:      moneyService,
 		userService:       userService,
 		saveImagesURL:     cfg.SaveImagesURL,
+		authKey:           cfg.AuthKey,
 	}
 }
 
@@ -53,10 +55,30 @@ type httpService struct {
 	moneyService      money_service.MoneyService
 	userService       user_service.UserService
 	saveImagesURL     string
+	authKey           string
 }
 
 func (s *httpService) CheckAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, err := r.Cookie("auth_jwt")
+		if err != nil {
+			http.Error(w, errors.Wrap(err, "error in getting cookie").Error(), http.StatusMethodNotAllowed)
+			return
+		}
+
+		var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
+			return []byte(s.authKey), nil
+		}
+
+		parsed, err := jwt.Parse(jwtCookie.Value, keyfunc)
+		if err != nil {
+			http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusMethodNotAllowed)
+			return
+		}
+
+		if !parsed.Valid {
+			http.Error(w, errors.Wrap(err, "failed to parse JWT").Error(), http.StatusForbidden)
+		}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -180,6 +202,11 @@ func (s *httpService) GetProduct(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "error in getting product")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if p == nil {
+		http.Error(w, errors.New("product not found").Error(), http.StatusNotFound)
 		return
 	}
 

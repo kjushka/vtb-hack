@@ -2,6 +2,7 @@ package user_repository
 
 import (
 	"context"
+	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"time"
@@ -69,6 +70,9 @@ func (userRep *userRepository) GetUser(ctx context.Context, userID int64) (*user
 		userID,
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, errors.WithStack(err)
 	}
 

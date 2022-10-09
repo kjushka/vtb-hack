@@ -21,7 +21,7 @@ create table if not exists product_comments
     author_id integer not null
 );
 
-create table if not exists purchase
+create table if not exists purchases
 (
     id serial primary key,
     product_id serial references products,

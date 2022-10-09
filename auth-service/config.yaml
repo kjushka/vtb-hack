@@ -1,0 +1,12 @@
+Service:
+  host: 0.0.0.0
+  port: 8000
+  jwt_key: dnjJNNGjd998R#df
+
+Database:
+  user: postgres
+  password: postgres
+  host: postgres
+  port: 5432
+  protocol: asyncpg
+  database: auth_service

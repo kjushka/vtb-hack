@@ -42,6 +42,9 @@ func (pr *productRepository) GetProduct(ctx context.Context, productID int64) (*
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	if product == nil {
+		return nil, nil
+	}
 
 	comments, err := pr.getProductComments(ctx, productID)
 	if err != nil {
@@ -75,6 +78,9 @@ func (pr *productRepository) getProduct(ctx context.Context, productID int64) (*
 		&productResult.Seller.ID,
 	)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, errors.WithStack(err)
 	}
 
@@ -105,6 +111,9 @@ func (pr *productRepository) getProductComments(ctx context.Context, productID i
 		comments = append(comments, comment)
 	}
 	if err = commentsQueryRows.Err(); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, errors.WithStack(err)
 	}
 

@@ -1,4 +1,4 @@
-version: "3.5"
+version: "3.8"
 networks:
   bridge-network:
     driver: bridge
@@ -8,7 +8,8 @@ services:
     build:
       dockerfile: market-service.Dockerfile
     depends_on:
-      - pgs
+      pgs:
+        condition: service_healthy
     container_name: market_service
     environment:
       #PG
@@ -23,6 +24,8 @@ services:
       #MONEY_SERVICE
       - MONEY_SERVICE_HOST=money_service
       - MONEY_SERVICE_PORT=8082
+      #AUTH_KEY
+      - AUTH_KEY=dnjJNNGjd998R#df
       #common
       - SAVE_IMAGES_PATH=/tmp/var/public/users
     ports:
@@ -38,7 +41,8 @@ services:
     build:
       dockerfile: user-service.Dockerfile
     depends_on:
-      - pgs
+      pgs:
+        condition: service_healthy
     container_name: user_service
     environment:
       #PG
@@ -78,8 +82,23 @@ services:
     networks:
       - bridge-network
     depends_on:
-      - pgs
+      pgs:
+        condition: service_healthy
     user: root
+
+  auth_service:
+    build:
+      dockerfile: auth-service.Dockerfile
+    container_name: auth_service
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - 8000:8000
+    networks:
+      - bridge-network
+    depends_on:
+      pgs:
+        condition: service_healthy
 
   pgs:
     container_name: postgres
