@@ -19,8 +19,9 @@ type Product struct {
 }
 
 type Comment struct {
-	ID     int64              `json:"id"`
-	Text   string             `json:"text"`
-	Author *user_service.User `json:"author"`
-	Date   time.Time          `json:"date"`
+	ID          int64              `json:"id"`
+	CommentText string             `json:"commentText"`
+	Author      *user_service.User `json:"author"`
+	WriteDate   time.Time          `json:"writeDate"`
+	ProductID   int64              `json:"productID"`
 }

@@ -12,5 +12,6 @@ func initRoutes(r chi.Router, s Service) {
 		r.Get("/products/users/{id}", s.GetUserProducts)
 		r.Get("/purchases/users/{id}", s.GetUserPurchases)
 		r.Post("/buy/{id}", s.BuyProduct)
+		r.Post("/products/feedback/add", s.AddFeedback)
 	})
 }

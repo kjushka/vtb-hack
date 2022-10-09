@@ -33,7 +33,6 @@ type Service interface {
 	DeleteProduct(w http.ResponseWriter, r *http.Request)
 
 	BuyProduct(w http.ResponseWriter, r *http.Request)
-	AddFeedback(w http.ResponseWriter, r *http.Request)
 	GetUserProducts(w http.ResponseWriter, r *http.Request)
 	GetUserPurchases(w http.ResponseWriter, r *http.Request)
 }
@@ -486,30 +485,4 @@ func (s *httpService) GetUserPurchases(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
-}
-
-func (s *httpService) AddFeedback(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	var err error
-
-	buf, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	var comment product.Comment
-	err = json.Unmarshal(buf, &comment)
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	err = s.productRepository.AddComment(ctx, comment)
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "error in adding product comment").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }

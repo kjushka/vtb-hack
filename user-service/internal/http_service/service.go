@@ -33,6 +33,8 @@ type Service interface {
 	GetUsers(w http.ResponseWriter, r *http.Request)
 	EditUser(w http.ResponseWriter, r *http.Request)
 	DeleteUser(w http.ResponseWriter, r *http.Request)
+
+	Thanks(w http.ResponseWriter, r *http.Request)
 }
 
 func NewService(db *sqlx.DB, cfg *config.Config) Service {
@@ -372,6 +374,46 @@ func (s *httpService) DeleteUser(w http.ResponseWriter, r *http.Request) {
 			log.Println(errors.Wrap(err, "error in deleting user data in market"))
 		}
 	}()
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *httpService) Thanks(w http.ResponseWriter, r *http.Request) {
+	thanksRequest := struct {
+		From   int64   `json:"from"`
+		To     int64   `json:"to"`
+		Amount float64 `json:"amount"`
+	}{}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in read body").Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+
+	err = json.Unmarshal(body, &thanksRequest)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "internal error").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	balance, err := s.moneyService.GetUserBalance(thanksRequest.From)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in getting sender user balance").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if thanksRequest.Amount > balance.Balance {
+		http.Error(w, errors.New("current seller balance less than thanks").Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = s.moneyService.Thanks(thanksRequest.From, thanksRequest.To, thanksRequest.Amount)
+	if err != nil {
+		http.Error(w, errors.Wrap(err, "error in send thanks").Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

@@ -20,7 +20,6 @@ type ProductRepository interface {
 	UpdateProduct(ctx context.Context, productId int64, pr *product.Product) (*product.Product, error)
 	DeleteProduct(ctx context.Context, productID int64) error
 	MakePurchase(ctx context.Context, p *product.Product, customerID, amount int64) error
-	AddComment(ctx context.Context, comment product.Comment) error
 	GetUserProducts(ctx context.Context, userID int64) ([]product.Product, error)
 	GetUserPurchases(ctx context.Context, userID int64) ([]product.Purchase, error)
 }
@@ -93,7 +92,6 @@ func (pr *productRepository) getProductComments(ctx context.Context, productID i
 		select id, comment_text, write_date, author_id
 		from product_comments
 		where product_id = $1
-		order by write_date desc
 	`, productID)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -104,8 +102,8 @@ func (pr *productRepository) getProductComments(ctx context.Context, productID i
 		comment := product_model.Comment{Author: &user_service.User{}}
 		if err = commentsQueryRows.Scan(
 			&comment.ID,
-			&comment.CommentText,
-			&comment.WriteDate,
+			&comment.Text,
+			&comment.Date,
 			&comment.Author.ID,
 		); err != nil {
 			return nil, errors.WithStack(err)
@@ -150,7 +148,7 @@ func (pr *productRepository) GetAllProducts(ctx context.Context) ([]product.Prod
 	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
 	defer cancel()
 
-	query := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products order by price asc;"
+	query := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products;"
 
 	var productsDTO []product.DTOProduct
 	err := pr.db.SelectContext(ctx, &productsDTO, query)
@@ -166,7 +164,7 @@ func (pr *productRepository) GetProductsByIDs(ctx context.Context, productsIds [
 	defer cancel()
 
 	var err error
-	queryBase := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products where id in (?) order by price;"
+	queryBase := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products where id in (?);"
 	query, params, err := sqlx.In(queryBase, productsIds)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -291,7 +289,7 @@ func (pr *productRepository) GetUserProducts(ctx context.Context, userID int64) 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
 	defer cancel()
 
-	query := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products where seller_id = $1 order by price;"
+	query := "select id, title, description, price, product_count as count, preview, seller_id as sellerID, is_nft as isNFT from products where seller_id = $1;"
 
 	var productsDTO []product.DTOProduct
 	err := pr.db.SelectContext(ctx, &productsDTO, query, userID)
@@ -313,9 +311,7 @@ select pr.id, pr.title, pr.description, pr.price, pr.product_count as count,
 from purchases as pur
 inner join products as pr
 on pur.product_id = pr.id
-where pur.owner_id = $1
-order by pur.buy_date;
-`
+where pur.owner_id = $1;`
 
 	var dtoPurchases []product.DTOPurchase
 	err := pr.db.SelectContext(ctx, &dtoPurchases, query, userID)
@@ -324,25 +320,4 @@ order by pur.buy_date;
 	}
 
 	return product.DTOToPurchase(dtoPurchases), nil
-}
-
-func (pr *productRepository) AddComment(ctx context.Context, comment product.Comment) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
-	defer cancel()
-
-	_, err := pr.db.ExecContext(ctx,
-		`
-		insert into product_comments (comment_text, write_date, author_id, product_id)
-		values ($1, $2, $3, $4, $5, $6, $7);
-		`,
-		comment.CommentText,
-		time.Now(),
-		comment.Author.ID,
-		comment.ProductID,
-	)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	return nil
 }

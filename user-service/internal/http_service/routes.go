@@ -9,5 +9,7 @@ func initRoutes(r chi.Router, s Service) {
 		r.Get("/users/{id}", s.GetUser)
 		r.Put("/users/{id}", s.EditUser)
 		r.Delete("/users/{id}", s.DeleteUser)
+
+		r.Post("/thanks", s.Thanks)
 	})
 }
